@@ -1,0 +1,35 @@
+# Third-party notices
+
+LEADLIGHT's direct runtime dependencies are distributed under the following
+licenses, as declared by the installed packages audited on 2026-07-27:
+
+| Package | Reviewed version | License |
+| --- | --- | --- |
+| `@series-inc/rundot-game-sdk` | 5.24.0 | MIT |
+| `firebase` | 12.16.0 | Apache-2.0 |
+| `pixi.js` | 8.19.0 | MIT |
+| `react` | 19.2.4 | MIT |
+| `react-dom` | 19.2.4 | MIT |
+
+The lockfile also resolves transitive and development dependencies. Their
+license texts ship in their npm packages and remain controlling. Re-run a
+dependency-license review whenever the lockfile changes, preserve required
+copyright and attribution notices, and include applicable notices with any
+distributed compiled build. This file does not replace those license texts.
+
+## Development and QA tooling
+
+| Package | Reviewed version | License |
+| --- | --- | --- |
+| `playwright-core` | 1.62.0 | Apache-2.0 |
+
+Playwright drives `scripts/visual-qa.mjs` and `scripts/make-thumbnail.mjs` for
+local and CI verification. It is not included in the compiled game bundle.
+
+## Assets
+
+None. Every texture, backdrop, store tile, and sound in this game is generated
+at runtime by its own code (`src/game/art/` and `src/audio/`), so no image,
+font, or audio file is redistributed here.
+
+The repository's own materials are governed by [LICENSE.md](LICENSE.md).

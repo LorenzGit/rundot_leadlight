@@ -1,0 +1,8 @@
+{
+  "gameId": "REPLACE_WITH_RUN_GAME_ID",
+  "relativePathToDistFolder": "dist",
+  "usesPreloader": false,
+  "orientation": "Both",
+  "keywords": ["puzzle", "block puzzle", "stained glass", "casual", "brain", "one thumb", "offline"],
+  "kitId": null
+}

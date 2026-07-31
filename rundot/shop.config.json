@@ -1,0 +1,64 @@
+{
+  "items": [
+    {
+      "itemId": "leadlight_glazier_pass",
+      "name": "Glazier's Pass",
+      "description": "Permanently unlocks the Aurora, Cathedral and Ember glass, and removes the between-runs interstitial. Cosmetic and ad-free only — no shape, draw, or score changes.",
+      "category": "bundle",
+      "price": { "type": "bucks", "value": "399" },
+      "entitlements": [
+        { "entitlementId": "leadlight_palette_pack_aurora", "quantity": 1, "consumable": false },
+        { "entitlementId": "leadlight_no_interstitials", "quantity": 1, "consumable": false },
+        { "entitlementId": "leadlight_palette_ember", "quantity": 1, "consumable": false }
+      ],
+      "assets": {},
+      "unique": true,
+      "active": true,
+      "regions": [],
+      "refundEligible": true,
+      "refundWindowHours": 24,
+      "tags": ["leadlight", "founder", "cosmetic", "ad-free", "permanent"],
+      "sortOrder": 1,
+      "releasedAt": null,
+      "expiresAt": null
+    },
+    {
+      "itemId": "leadlight_palette_pack_aurora",
+      "name": "Palette Pack — Aurora",
+      "description": "Permanently unlocks the Aurora and Cathedral glass. Cosmetic only.",
+      "category": "non_consumable",
+      "price": { "type": "bucks", "value": "199" },
+      "entitlements": [{ "entitlementId": "leadlight_palette_pack_aurora", "quantity": 1, "consumable": false }],
+      "assets": {},
+      "unique": true,
+      "active": true,
+      "regions": [],
+      "refundEligible": true,
+      "refundWindowHours": 24,
+      "tags": ["leadlight", "cosmetic", "permanent"],
+      "sortOrder": 2,
+      "releasedAt": null,
+      "expiresAt": null
+    },
+    {
+      "itemId": "leadlight_no_interstitials",
+      "name": "Ad-Free Forever",
+      "description": "Permanently removes the between-runs interstitial. Optional rewarded videos remain available and are never required.",
+      "category": "non_consumable",
+      "price": { "type": "bucks", "value": "249" },
+      "entitlements": [{ "entitlementId": "leadlight_no_interstitials", "quantity": 1, "consumable": false }],
+      "assets": {},
+      "unique": true,
+      "active": true,
+      "regions": [],
+      "refundEligible": true,
+      "refundWindowHours": 24,
+      "tags": ["leadlight", "ad-free", "permanent"],
+      "sortOrder": 3,
+      "releasedAt": null,
+      "expiresAt": null
+    }
+  ],
+  "sales": [],
+  "collections": []
+}

@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>LEADLIGHT thumbnail</title>
+    <style>
+        body { margin: 0; background: #17100a; display: grid; place-items: center; min-height: 100vh; }
+        img { width: 512px; height: 512px; }
+    </style>
+</head>
+<body>
+    <!--
+      Development-only page. `scripts/make-thumbnail.mjs` opens it in headless
+      Chromium and reads `window.__thumbnail()`. It is never part of the
+      production build: `vite build` bundles index.html and nothing else.
+    -->
+    <img id="preview" alt="Thumbnail preview" />
+    <script type="module">
+        import { renderThumbnail } from "/src/dev/thumbnail.ts";
+        const url = renderThumbnail();
+        document.getElementById("preview").src = url;
+        window.__thumbnail = () => renderThumbnail();
+    </script>
+</body>
+</html>

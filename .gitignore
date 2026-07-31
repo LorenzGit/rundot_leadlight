@@ -1,0 +1,47 @@
+# Dependencies, caches, and build output
+node_modules/
+dist/
+dist-ssr/
+.vite/
+*.tsbuildinfo
+
+# Local environment and credentials
+.env
+.env.*
+!.env.example
+*.local
+game.config.playground.json
+*.pem
+*.key
+*.p12
+
+# RUN local/operator state (keep reviewed source configs elsewhere)
+.rundot/
+rundot-session*
+player-snapshot*
+campaign-state*
+
+# Test and QA output. `screenshots/` is anchored to the repo root on purpose:
+# unanchored it also swallows docs/screenshots, which the README links to, and
+# the images turn into broken links on GitHub without anything failing locally.
+coverage/
+playwright-report/
+test-results/
+/screenshots/
+tmp/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Editors and operating systems
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+*.swp
+*.swo
+*~

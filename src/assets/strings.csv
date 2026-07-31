@@ -1,0 +1,102 @@
+KEY,English,PortugueseBR,SpanishLA
+MenuSubtitle,"Cut the glass. Fill a row. Fire the kiln.","Corte o vidro. Preencha uma linha. Acenda o forno.","Corta el vidrio. Llena una fila. Enciende el horno."
+MenuNavLabel,GAME MENUS,MENUS DO JOGO,MENÚS DEL JUEGO
+MenuAtelier,ATELIER,ATELIÊ,TALLER
+MenuDailyRewards,DAILY GLASS,VIDRO DIÁRIO,VIDRIO DIARIO
+MenuDailyQuests,DAILY WORK,TRABALHO DIÁRIO,TRABAJO DIARIO
+MenuStats,RECORD,REGISTRO,REGISTRO
+MenuSettings,SETTINGS,OPÇÕES,AJUSTES
+ButtonPlay,PLAY,JOGAR,JUGAR
+ButtonBack,BACK,VOLTAR,ATRÁS
+ButtonMenu,MENU,MENU,MENÚ
+ButtonDone,DONE,PRONTO,LISTO
+ButtonTest,TEST,TESTAR,PROBAR
+PlayerSummary,PLAYER SUMMARY,RESUMO DO JOGADOR,RESUMEN DEL JUGADOR
+LabelBest,BEST,MELHOR,MEJOR
+LabelScore,SCORE,PONTOS,PUNTOS
+LabelCombo,COMBO,COMBO,COMBO
+LabelShards,SHARDS,CACOS,ESQUIRLAS
+LabelLines,LINES FIRED,LINHAS QUEIMADAS,LÍNEAS QUEMADAS
+LabelBestCombo,BEST COMBO,MELHOR COMBO,MEJOR COMBO
+LabelCleanPanes,CLEAN PANES,PAINÉIS LIMPOS,PANELES LIMPIOS
+LabelDay,DAY,DIA,DÍA
+LoadingCopy,HEATING THE KILN…,AQUECENDO O FORNO…,CALENTANDO EL HORNO…
+Paused,PAUSED,PAUSADO,EN PAUSA
+PausedEyebrow,THE BENCH WAITS,A BANCADA ESPERA,EL BANCO ESPERA
+HelperChisel,CHISEL,CINZEL,CINCEL
+HelperChiselHint,Remove one placed cell.,Remove uma célula colocada.,Quita una celda colocada.
+HelperChiselArmed,Tap a cell to chip it out.,Toque uma célula para removê-la.,Toca una celda para quitarla.
+HelperRecut,RECUT,RECORTAR,RECORTAR
+HelperRecutHint,Discard the tray and draw three new cuts.,Descarte a bandeja e puxe três cortes novos.,Descarta la bandeja y saca tres cortes nuevos.
+StuckEyebrow,NO CUT FITS,NENHUM CORTE CABE,NINGÚN CORTE ENCAJA
+StuckTitle,THE PANEL IS FULL,O PAINEL ESTÁ CHEIO,EL PANEL ESTÁ LLENO
+StuckCopy,"Nothing in the tray will fit. Open some room, or call the run finished.","Nada na bandeja cabe. Abra espaço ou encerre a partida.","Nada de la bandeja cabe. Abre espacio o termina la partida."
+StuckRecut,RECUT THE TRAY · [cost],RECORTAR A BANDEJA · [cost],RECORTAR LA BANDEJA · [cost]
+StuckChisel,CHISEL A CELL · [cost],CINZELAR UMA CÉLULA · [cost],CINCELAR UNA CELDA · [cost]
+StuckNoShards,"You have [shards] shards — helpers are earned by finishing runs.","Você tem [shards] cacos — auxílios são ganhos ao terminar partidas.","Tienes [shards] esquirlas — las ayudas se ganan al terminar partidas."
+StuckSecondFiring,WATCH · SECOND FIRING,ASSISTIR · SEGUNDA QUEIMA,VER · SEGUNDA QUEMA
+StuckFinish,FINISH THE RUN,ENCERRAR A PARTIDA,TERMINAR LA PARTIDA
+ResultsTitle,RUN COMPLETE,PARTIDA CONCLUÍDA,PARTIDA COMPLETA
+ResultsEyebrow,THE KILN COOLS,O FORNO ESFRIA,EL HORNO SE ENFRÍA
+ResultsRecord,A NEW BEST PANEL,NOVO MELHOR PAINEL,NUEVO MEJOR PANEL
+ResultsDoubleCullet,WATCH · DOUBLE [shards] SHARDS,ASSISTIR · DOBRAR [shards] CACOS,VER · DUPLICAR [shards] ESQUIRLAS
+ResultsDoubled,DOUBLED,DOBRADO,DUPLICADO
+ResultsAgain,CUT ANOTHER,CORTAR OUTRO,CORTAR OTRO
+ResultsBench,BACK TO THE BENCH,VOLTAR À BANCADA,VOLVER AL BANCO
+AdLoading,LOADING…,CARREGANDO…,CARGANDO…
+AdUnavailable,NO VIDEO AVAILABLE RIGHT NOW,NENHUM VÍDEO DISPONÍVEL AGORA,NINGÚN VIDEO DISPONIBLE AHORA
+KickerAtelier,GLASS + WORKSHOP,VIDRO + OFICINA,VIDRIO + TALLER
+AtelierBody,"Every palette cuts, fires and scores exactly the same. The glass is the only thing that changes.","Toda paleta corta, queima e pontua igual. Só o vidro muda.","Cada paleta corta, quema y puntúa igual. Solo cambia el vidrio."
+AtelierProducts,WORKSHOP,OFICINA,TALLER
+AtelierProductsBody,"Permanent unlocks, bought with Run Bits.","Desbloqueios permanentes, comprados com Run Bits.","Desbloqueos permanentes, comprados con Run Bits."
+AtelierSafetyNote,"Ownership is read from RUN entitlements every session, never from this device.","A posse é lida das permissões da RUN a cada sessão, nunca deste aparelho.","La propiedad se lee de las licencias de RUN cada sesión, nunca de este dispositivo."
+PaletteSelect,SELECT,SELECIONAR,SELECCIONAR
+PaletteSelected,IN USE,EM USO,EN USO
+PaletteUnlockShards,UNLOCK · [cost],DESBLOQUEAR · [cost],DESBLOQUEAR · [cost]
+NotEnoughShards,NOT ENOUGH SHARDS YET,CACOS INSUFICIENTES,ESQUIRLAS INSUFICIENTES
+Owned,OWNED,ADQUIRIDO,ADQUIRIDO
+PurchaseWorking,OPENING CHECKOUT…,ABRINDO PAGAMENTO…,ABRIENDO PAGO…
+PurchaseConfirmed,UNLOCKED — THANK YOU,DESBLOQUEADO — OBRIGADO,DESBLOQUEADO — GRACIAS
+PurchaseCancelled,PURCHASE CANCELLED,COMPRA CANCELADA,COMPRA CANCELADA
+PurchaseFailed,PURCHASE DID NOT COMPLETE,A COMPRA NÃO FOI CONCLUÍDA,LA COMPRA NO SE COMPLETÓ
+PurchasePending,STILL CONFIRMING — WE WILL FINISH THIS NEXT TIME YOU OPEN THE GAME,AINDA CONFIRMANDO — TERMINAREMOS NA PRÓXIMA VEZ,AÚN CONFIRMANDO — LO TERMINAREMOS LA PRÓXIMA VEZ
+PurchaseUnavailable,NOT AVAILABLE RIGHT NOW,INDISPONÍVEL AGORA,NO DISPONIBLE AHORA
+KickerStats,YOUR BENCH,SUA BANCADA,TU BANCO
+StatsBody,Everything you have cut so far.,Tudo o que você cortou até agora.,Todo lo que has cortado hasta ahora.
+StatBestScore,BEST SCORE,MELHOR PONTUAÇÃO,MEJOR PUNTUACIÓN
+StatBestCombo,BEST COMBO,MELHOR COMBO,MEJOR COMBO
+StatRuns,RUNS FINISHED,PARTIDAS,PARTIDAS
+StatLines,LINES FIRED,LINHAS QUEIMADAS,LÍNEAS QUEMADAS
+StatCleanPanes,CLEAN PANES,PAINÉIS LIMPOS,PANELES LIMPIOS
+KickerDailyRewards,RETURN LOOP,VOLTE SEMPRE,VUELVE PRONTO
+DailyRewardsBody,A handful of shards for every day you come back to the bench.,Alguns cacos por cada dia que você volta à bancada.,Unas esquirlas por cada día que vuelves al banco.
+KickerDailyQuests,TODAY'S ORDER,PEDIDO DE HOJE,PEDIDO DE HOY
+DailyQuestsBody,Three jobs a day. They reset with the trusted clock.,Três tarefas por dia. Reiniciam com o relógio confiável.,Tres tareas al día. Se reinician con el reloj confiable.
+ClaimShards,CLAIM [shards] SHARDS,RECEBER [shards] CACOS,RECLAMAR [shards] ESQUIRLAS
+Claimed,CLAIMED,RECEBIDO,RECLAMADO
+ClaimedToday,CLAIMED TODAY,RECEBIDO HOJE,RECLAMADO HOY
+InProgress,IN PROGRESS,EM ANDAMENTO,EN PROGRESO
+Saving,SAVING…,SALVANDO…,GUARDANDO…
+LocalClaimNote,"Local-browser claims persist for development but are never presented as RUN-authoritative.","Recompensas locais persistem para desenvolvimento, mas nunca são apresentadas como oficiais da RUN.","Los reclamos locales persisten para desarrollo, pero nunca se presentan como oficiales de RUN."
+KickerSettings,COMFORT + ACCESS,CONFORTO + ACESSO,COMODIDAD + ACCESO
+SettingsMusic,AMBIENCE,AMBIENTE,AMBIENTE
+SettingsMusicVolume,AMBIENCE VOLUME,VOLUME DO AMBIENTE,VOLUMEN DEL AMBIENTE
+SettingsSfx,SOUND EFFECTS,EFEITOS SONOROS,EFECTOS DE SONIDO
+SettingsSfxVolume,EFFECTS VOLUME,VOLUME DOS EFEITOS,VOLUMEN DE EFECTOS
+SettingsHaptics,HAPTICS,VIBRAÇÃO,VIBRACIÓN
+SettingsReducedMotion,REDUCED MOTION,MOVIMENTO REDUZIDO,MOVIMIENTO REDUCIDO
+SettingsNotifications,REMINDERS,LEMBRETES,RECORDATORIOS
+SettingsLanguage,LANGUAGE,IDIOMA,IDIOMA
+SettingsQuality,EFFECTS DETAIL,DETALHE DOS EFEITOS,DETALLE DE EFECTOS
+SettingsLow,LOW,BAIXO,BAJO
+SettingsHigh,HIGH,ALTO,ALTO
+SettingsUnavailable,NOT SUPPORTED ON THIS DEVICE,NÃO SUPORTADO NESTE APARELHO,NO COMPATIBLE CON ESTE DISPOSITIVO
+ToggleOn,ON,LIGADO,ACTIVO
+ToggleOff,OFF,DESLIGADO,INACTIVO
+ToggleAsk,ASK,PERGUNTAR,PREGUNTAR
+NotificationFailed,REMINDER REQUEST FAILED,FALHA AO PEDIR LEMBRETE,FALLÓ LA SOLICITUD DE RECORDATORIO
+NotificationConsentNote,Reminder consent changes only after the RUN host confirms the requested state.,O consentimento muda apenas após a RUN confirmar o estado solicitado.,El consentimiento cambia solo tras la confirmación de RUN.
+HapticSent,HAPTIC SENT,VIBRAÇÃO ENVIADA,VIBRACIÓN ENVIADA
+HapticUnsupported,HAPTICS NEED A SUPPORTED DEVICE,A VIBRAÇÃO EXIGE UM APARELHO COMPATÍVEL,LA VIBRACIÓN REQUIERE UN DISPOSITIVO COMPATIBLE
+NotificationTitle,LEADLIGHT,LEADLIGHT,LEADLIGHT
+NotificationReEngagementBody,The kiln is cold and there is glass on the bench.,O forno esfriou e há vidro na bancada.,El horno está frío y hay vidrio en el banco.

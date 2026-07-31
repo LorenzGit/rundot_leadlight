@@ -1,0 +1,51 @@
+{
+  "client": {
+    "values": {
+      "leadlight_runtime": {
+        "dailyRewardsEnabled": true,
+        "dailyQuestsEnabled": true,
+        "notificationDelaySeconds": 86400
+      },
+      "leadlight_monetization": {
+        "enabled": true,
+        "purchasesEnabled": true,
+        "rewardedAdsEnabled": true,
+        "interstitialAdsEnabled": true,
+        "placements": {
+          "second_firing": {
+            "enabled": true,
+            "cooldownSeconds": 0,
+            "sessionCap": 3,
+            "dailyCap": 8,
+            "rewardMultiplier": 1
+          },
+          "double_cullet": {
+            "enabled": true,
+            "cooldownSeconds": 30,
+            "sessionCap": 4,
+            "dailyCap": 12,
+            "rewardMultiplier": 1
+          },
+          "between_runs": {
+            "enabled": true,
+            "cooldownSeconds": 90,
+            "sessionCap": 2,
+            "dailyCap": 5,
+            "rewardMultiplier": 1
+          }
+        },
+        "products": {
+          "palette_pack": { "enabled": true },
+          "ad_free": { "enabled": true },
+          "glazier_pass": { "enabled": true }
+        }
+      }
+    },
+    "overrides": [],
+    "experiments": []
+  },
+  "server": {
+    "values": {},
+    "overrides": []
+  }
+}

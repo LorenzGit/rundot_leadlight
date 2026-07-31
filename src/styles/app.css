@@ -1,0 +1,1946 @@
+@import "tailwindcss";
+
+/* ---------------------------------------------------------------------------
+   LEADLIGHT — Stained Glass Atelier (DESIGN.md §8).
+
+   The DOM chrome is the workshop: oiled oak, pewter came, warm lamp light, and
+   glass for the accents. Every surface is layered rather than flat — drop
+   shadow, dark rim, gradient body, a bright bevel along the top — because a
+   single flat fill on a wood backdrop reads as a web page, not a bench.
+--------------------------------------------------------------------------- */
+
+@theme {
+    --color-primary: #e8a33d;
+    --color-surface: #1c1512;
+    --text-sm: 0.9625rem;
+    --text-lg: 1.2375rem;
+    --text-2xl: 1.65rem;
+    --text-3xl: 2.0625rem;
+}
+
+:root {
+    /* UI is a clean geometric sans. The serif is reserved for the wordmark and
+       the run's final score — used everywhere it read as a museum placard, and
+       at small sizes with wide tracking it was actively hard to scan. */
+    font-family:
+        ui-rounded, "SF Pro Rounded", "Avenir Next", "Segoe UI Variable Display", "Segoe UI", Roboto, system-ui,
+        sans-serif;
+    /* Semibold as the FLOOR. A 400-weight system sans is what makes a game
+       screen read as a preferences pane; every label in this genre is heavy. */
+    font-weight: 600;
+    --display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    color-scheme: dark;
+
+    /* Glass */
+    --amber: #ffb02e;
+    --cobalt: #3d7bff;
+    --viridian: #21d18d;
+    --rose: #ff4f87;
+    --plum: #a95cff;
+    --ruby: #ff6a3d;
+
+    /* Workshop — dark and cool, so the glass is the only bright thing. */
+    --oak: #5a4029;
+    --oak-dark: #1c1410;
+    --oak-deep: #0d0908;
+    --came: #3a3547;
+    --pewter: #9a94b0;
+    --lamp: #ffdc9a;
+    --chalk: #f2ece4;
+    --chalk-dim: #a99e94;
+
+    /* ---------------------------------------------------------------------
+       Surfaces.
+
+       One rule: a surface is a VALUE, never a material. No gradient bodies, no
+       1px warm rims, no inset top highlights, no drop shadows. Those four
+       together are the vocabulary that reads as a 2010s mobile game, and they
+       were on every card in here. Depth now comes from three steps of
+       translucent white over the backdrop, so the palette still tints every
+       surface and the glass stays the only saturated thing on screen.
+    --------------------------------------------------------------------- */
+    --surface-1: rgba(255, 248, 255, 0.11);
+    --surface-2: rgba(255, 248, 255, 0.17);
+    --surface-3: rgba(255, 248, 255, 0.26);
+    --hairline: rgba(255, 246, 255, 0.14);
+    /* The chunky bottom edge every raised thing sits on. This IS the genre:
+       one light from above, one side wall below, and a soft contact shadow. A
+       flat card reads as a wireframe next to it. */
+    --edge: 0 4px 0 rgba(0, 0, 0, 0.32);
+    --edge-sm: 0 3px 0 rgba(0, 0, 0, 0.3);
+    --lift: 0 6px 14px rgba(0, 0, 0, 0.3);
+    --scrim: rgba(8, 7, 9, 0.72);
+    --radius: 18px;
+    --radius-sm: 14px;
+
+    --panel: rgba(18, 14, 12, 0.88);
+    --panel-rim: transparent;
+}
+
+button,
+select,
+input {
+    font: inherit;
+}
+
+button:focus-visible,
+select:focus-visible,
+input:focus-visible {
+    outline: 3px solid var(--lamp);
+    outline-offset: 3px;
+}
+
+/* ---------------------------------------------------------------------------
+   Viewport + playable frame. Portrait is primary; landscape is a first-class
+   layout rather than a squeezed portrait column. The backdrops are composed at
+   boot from the game's own glass (see assets/preload.ts) and published as
+   custom properties — the flat oak below is the fallback if that ever fails.
+--------------------------------------------------------------------------- */
+
+:root {
+    /* One design unit, in CSS px — the mirror of stage.ts MAX_UNIT_PX. The cap
+       is what makes a desktop window render the game at its designed size
+       instead of at whatever size the window happens to be. Capping the FRAME
+       instead is what left dark bands: the canvas paints the stage, so the
+       stage stopped where the frame did. */
+    --u: min(calc(100vw / 720), 0.85px);
+    --box-w: calc(720 * var(--u));
+    --box-h: 100dvh;
+    --box-x: calc((100vw - var(--box-w)) / 2);
+    --box-y: 0px;
+    --scene-backdrop-portrait: none;
+    --scene-backdrop-wide: none;
+    --scene-backdrop: var(--scene-backdrop-portrait);
+    /* Inset chain per edge: an attached RUN host publishes authoritative
+       values inline (see applyRunSafeArea); a ViewDeck preview exposes its
+       device insets as --viewdeck-safe-area-inset-*; the browser's own env()
+       is the final fallback. */
+    --safe-top: var(--viewdeck-safe-area-inset-top, env(safe-area-inset-top, 0px));
+    --safe-right: var(--viewdeck-safe-area-inset-right, env(safe-area-inset-right, 0px));
+    --safe-bottom: var(--viewdeck-safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
+    --safe-left: var(--viewdeck-safe-area-inset-left, env(safe-area-inset-left, 0px));
+}
+
+@media (orientation: landscape) {
+    /* Accommodates modern 19.5:9–20:9 phones without stretching indefinitely
+       on ultrawide desktop windows. Decorative side art fills any remainder. */
+    :root {
+        --u: min(calc(100dvh / 720), 0.85px);
+        --box-h: calc(720 * var(--u));
+        --box-w: min(100vw, calc(var(--box-h) * 2.2));
+        --box-x: calc((100vw - var(--box-w)) / 2);
+        --box-y: calc((100dvh - var(--box-h)) / 2);
+        --scene-backdrop: var(--scene-backdrop-wide);
+
+        /* The right-hand rail, mirrored from scene/layout.ts. The landscape
+           design scale is viewport-height / 720, so a design unit is
+           `var(--u)` and each reserve is just its constant in design units:
+           rail 400, HUD 215, helpers 105. The scene keeps the tray column
+           clear of both reserves, so these are what stop the DOM landing on
+           the cuts — they are not decorative padding. */
+        --rail-width: calc(400 * var(--u));
+        --rail-hud: calc(215 * var(--u));
+        --rail-helper: calc(105 * var(--u));
+    }
+}
+
+html,
+body {
+    height: 100%;
+}
+
+body,
+body * {
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+}
+
+body {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    background: var(--oak-deep);
+    font-size: 17.5px;
+    touch-action: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Full-viewport backdrop, deliberately separate from the playable frame so
+   desktop side areas show intentional game art rather than empty app chrome. */
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background-color: var(--oak-dark);
+    background-image:
+        linear-gradient(
+            180deg,
+            rgba(24, 16, 30, 0.7) 0%,
+            rgba(24, 16, 30, 0.34) 32%,
+            rgba(24, 16, 30, 0.4) 62%,
+            rgba(24, 16, 30, 0.76) 100%
+        ),
+        var(--scene-backdrop);
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover, cover;
+}
+
+#root {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+}
+
+#app-frame {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    /* Everything in the scene scales off the SHORT edge (see stage.ts), so an
+       uncapped frame on a desktop window makes a phone game enormous: a 830px
+       window put the board's cells at 127px and the carried cut at a third of
+       the screen. Capping the short edge holds the game at its design size and
+       lets the backdrop fill the rest, which is what the frame is for. */
+    height: 100dvh;
+    overflow: hidden;
+    color: var(--chalk);
+    /* The backdrop is the game's own glass, composed at boot. It is atmosphere,
+       not a subject, so it carries a scrim — but only enough to hold text. A
+       heavy one drops the menu to near-black while the bench is lit, and the
+       two screens then look like different games. */
+    background-color: var(--oak-dark);
+    background-image:
+        linear-gradient(
+            180deg,
+            rgba(24, 16, 30, 0.72) 0%,
+            rgba(24, 16, 30, 0.34) 32%,
+            rgba(24, 16, 30, 0.4) 62%,
+            rgba(24, 16, 30, 0.78) 100%
+        ),
+        var(--scene-backdrop);
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover, cover;
+}
+
+/* Safe-area utilities consume either browser fallbacks or RUN host values. */
+@utility pt-safe-top {
+    padding-top: calc(0.5rem + var(--safe-top));
+}
+@utility pb-safe-bottom {
+    padding-bottom: calc(0.5rem + var(--safe-bottom));
+}
+
+/* --------------------------------------------------------------------------
+   Shared workshop surfaces
+--------------------------------------------------------------------------- */
+
+.menu-shell,
+.subscreen {
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    min-height: 100%;
+    flex-direction: column;
+    overflow: hidden;
+    padding-right: max(clamp(18px, 6vw, 38px), var(--safe-right));
+    padding-left: max(clamp(18px, 6vw, 38px), var(--safe-left));
+}
+
+.menu-shell {
+    justify-content: flex-start;
+    gap: 14px;
+}
+
+/* The header stays up with the rose; everything from the player strip down is
+   anchored to the bottom safe area. Centring the whole stack instead left a
+   void of bare bench under the build stamp on tall phones, which read as a
+   broken screen rather than as atmosphere. The gap lands in the middle, where
+   the backdrop's bench and stain actually are. */
+
+.menu-header {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+}
+
+/* The backdrop is deliberately busy behind the title — it is the game's own
+   glass. This scrim is what lets it stay busy: the wordmark carries its own
+   contrast instead of the art having to be dimmed everywhere to suit it. */
+.menu-header::before {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    top: -18%;
+    right: -14%;
+    bottom: -14%;
+    left: -14%;
+    background: radial-gradient(
+        ellipse at center,
+        rgba(12, 8, 5, 0.82) 0%,
+        rgba(12, 8, 5, 0.55) 45%,
+        rgba(12, 8, 5, 0) 72%
+    );
+    pointer-events: none;
+}
+
+.eyebrow {
+    margin: 0;
+    color: var(--chalk-dim);
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+/* On the menu the eyebrow sits between two hairline rules, like a bench mark
+   stamped over the studio door. Everywhere else it stays plain. */
+.menu-header .eyebrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+}
+.menu-header .eyebrow::before,
+.menu-header .eyebrow::after {
+    content: "";
+    width: 34px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(232, 163, 61, 0.55));
+}
+.menu-header .eyebrow::after {
+    transform: scaleX(-1);
+}
+
+.menu-logo h1 {
+    margin: 10px 0 0;
+    font-family: var(--display);
+    font-size: clamp(40px, 13.5vw, 68px);
+    font-weight: 400;
+    line-height: 0.95;
+    letter-spacing: 0.1em;
+    /* One warm colour. The poured-gold gradient with its contact shadow and
+       amber halo was the single most dated thing on the first screen: the
+       wordmark is a piece of typography, not a chrome logo. */
+    color: var(--lamp);
+}
+
+.menu-subtitle {
+    margin: 12px 0 0;
+    color: var(--chalk);
+    font-size: 14px;
+    font-style: italic;
+    letter-spacing: 0.02em;
+    opacity: 0.86;
+}
+
+.player-strip {
+    display: flex;
+    /* Anchors the control stack to the bottom (see the note at .menu-shell). */
+    margin-top: auto;
+    min-height: 52px;
+    align-items: center;
+    justify-content: space-between;
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-sm);
+    background: var(--surface-1);
+    padding: 8px 14px;
+    box-shadow: var(--edge), var(--lift);
+}
+
+.player-best,
+.player-currency {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.player-best span {
+    color: var(--chalk-dim);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+}
+
+.player-best strong,
+.player-currency strong {
+    color: var(--lamp);
+    font-size: 20px;
+    font-weight: 400;
+}
+
+/* The shard glyph is a real leaded chip, not an emoji. */
+.shard-glyph {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    flex: none;
+    border: 1px solid var(--came);
+    background: linear-gradient(140deg, #9fe6ff 0%, #4f9fd8 52%, #2c5f92 100%);
+    clip-path: polygon(50% 0%, 100% 38%, 78% 100%, 16% 86%);
+}
+.shard-glyph.small {
+    width: 13px;
+    height: 13px;
+}
+
+.play-button {
+    position: relative;
+    display: flex;
+    min-height: 66px;
+    align-items: center;
+    justify-content: space-between;
+    overflow: hidden;
+    border: none;
+    border-radius: var(--radius);
+    background: var(--amber);
+    padding: 0 14px 0 24px;
+    color: #1a1206;
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    transition:
+        transform 120ms ease,
+        filter 120ms ease;
+}
+/* A slow light sweep across the face — the button is lit glass, not paint.
+   Killed with every other animation under reduced motion. */
+.play-button:active {
+    transform: translateY(2px);
+    filter: brightness(0.94);
+}
+.play-glyph {
+    display: grid;
+    width: 40px;
+    height: 40px;
+    place-items: center;
+    border: none;
+    border-radius: 999px;
+    background: rgba(26, 18, 6, 0.16);
+}
+.play-glyph svg {
+    width: 22px;
+    fill: #4a2c0c;
+}
+
+.menu-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+}
+
+.menu-tile {
+    display: flex;
+    min-height: 58px;
+    align-items: center;
+    gap: 11px;
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-sm);
+    background: var(--surface-1);
+    padding: 8px 10px;
+    color: var(--chalk);
+    text-align: left;
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    transition:
+        transform 110ms ease,
+        box-shadow 110ms ease;
+}
+.menu-tile:active {
+    transform: translateY(2px);
+}
+.menu-tile:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+}
+
+/* The icon is a mark, not a badge.
+
+   It used to be a 40px pane of came-bordered glass, filled with a per-tile
+   gradient — five saturated colours competing with each other and with the
+   actual glass on the board. One weight, one colour, no container: the tile's
+   meaning comes from its label, and the palette belongs to the game. */
+.menu-icon {
+    display: grid;
+    width: 26px;
+    height: 26px;
+    place-items: center;
+    flex: none;
+    color: var(--chalk-dim);
+}
+.menu-icon svg {
+    width: 24px;
+    fill: none;
+    stroke: currentcolor;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+/* The gear is the one solid mark among stroked outlines — see GearIcon. Its
+   stroke is not an outline, it is what rounds the eight tooth corners. The
+   `svg` qualifier is load-bearing: `.menu-icon svg` sets `fill: none` at the
+   same specificity, and unqualified this rule loses to it and the gear renders
+   as a hollow ring. */
+svg.gear-icon {
+    fill: currentcolor;
+    fill-rule: evenodd;
+    stroke-width: 1.5;
+    stroke-linejoin: round;
+}
+
+.build-stamp {
+    margin: 0;
+    color: var(--chalk-dim);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-align: center;
+    opacity: 0.6;
+}
+
+/* --------------------------------------------------------------------------
+   Sub-screens
+--------------------------------------------------------------------------- */
+
+.subscreen {
+    height: 100%;
+    min-height: 0;
+    padding-top: max(16px, var(--safe-top));
+}
+.subscreen-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 8px 2px 12px;
+}
+.subscreen-header h2 {
+    margin: 3px 0 0;
+    font-family: var(--display);
+    color: var(--lamp);
+    font-size: clamp(26px, 8.4vw, 40px);
+    font-weight: 400;
+    line-height: 1;
+    letter-spacing: 0.06em;
+    text-shadow: 0 2px 0 rgba(0, 0, 0, 0.5);
+}
+.back-button {
+    display: grid;
+    width: 48px;
+    height: 48px;
+    place-items: center;
+    flex: none;
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-sm);
+    background: var(--surface-2);
+    color: var(--lamp);
+    box-shadow: var(--edge), var(--lift);
+}
+.back-button svg {
+    width: 24px;
+    fill: none;
+    stroke: currentcolor;
+    stroke-width: 2.4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+.back-button:active {
+    transform: translateY(2px);
+}
+.subscreen-content {
+    min-height: 0;
+    flex: 1;
+    overflow-x: hidden;
+    overflow-y: auto;
+    border-top: 1px solid var(--panel-rim);
+    /* Opaque enough that the backdrop's glass never competes with body text,
+       translucent enough that the bench still reads behind the frame. */
+    background: var(--scrim);
+    padding: 18px 16px max(30px, var(--safe-bottom));
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+    -webkit-overflow-scrolling: touch;
+}
+.subscreen-end {
+    display: block;
+    width: 1px;
+    height: 1px;
+}
+.screen-copy {
+    margin: 0 0 18px;
+    color: var(--chalk);
+    font-size: 15px;
+    font-style: italic;
+    line-height: 1.5;
+    opacity: 0.9;
+}
+.screen-copy.small {
+    font-size: 13px;
+    margin-bottom: 12px;
+}
+.section-heading {
+    margin: 26px 0 8px;
+    color: var(--lamp);
+    font-size: 15px;
+    font-weight: 400;
+    letter-spacing: 0.1em;
+    border-bottom: 1px solid var(--panel-rim);
+    padding-bottom: 6px;
+}
+.safety-note {
+    margin-top: 18px;
+    color: var(--chalk-dim);
+    font-size: 12px;
+    line-height: 1.5;
+}
+.authority-label {
+    color: var(--amber);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    margin-bottom: 14px;
+}
+
+/* --------------------------------------------------------------------------
+   Atelier
+--------------------------------------------------------------------------- */
+
+.palette-list {
+    display: grid;
+    gap: 10px;
+}
+.palette-card {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 12px;
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-sm);
+    background: var(--surface-1);
+    padding: 12px;
+    box-shadow: var(--edge), var(--lift);
+}
+.palette-card.active {
+    border-color: var(--amber);
+    background: var(--surface-2);
+}
+.palette-swatch {
+    width: 76px;
+    height: 52px;
+    flex: none;
+    border: 1px solid var(--came);
+    border-radius: 3px;
+    object-fit: cover;
+}
+.palette-copy h3 {
+    margin: 0;
+    color: var(--lamp);
+    font-size: 16px;
+    font-weight: 400;
+    letter-spacing: 0.08em;
+}
+.palette-copy p {
+    margin: 4px 0 0;
+    color: var(--chalk-dim);
+    font-size: 12.5px;
+    line-height: 1.4;
+}
+.palette-action,
+.palette-locked {
+    grid-column: 1 / -1;
+    min-height: 44px;
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-sm);
+    background: rgba(58, 43, 31, 0.7);
+    color: var(--chalk);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+}
+.palette-action.active {
+    border-color: var(--amber);
+    color: var(--amber);
+}
+.palette-locked {
+    display: grid;
+    place-items: center;
+    color: var(--chalk-dim);
+    font-size: 11px;
+}
+
+.shop-card {
+    border: 1px solid var(--hairline);
+    border-left: 3px solid var(--amber);
+    border-radius: var(--radius-sm);
+    background: var(--surface-1);
+    padding: 14px;
+    box-shadow: var(--edge), var(--lift);
+}
+.shop-card + .shop-card {
+    margin-top: 10px;
+}
+.shop-card h3 {
+    margin: 5px 0;
+    color: var(--lamp);
+    font-size: 17px;
+    font-weight: 400;
+    letter-spacing: 0.06em;
+}
+.shop-card p:not(.eyebrow) {
+    margin: 0;
+    color: var(--chalk);
+    font-size: 13.5px;
+    line-height: 1.45;
+}
+.shop-card button {
+    width: 100%;
+    min-height: 48px;
+    margin-top: 12px;
+    border: 1px solid rgba(255, 228, 176, 0.4);
+    border-radius: var(--radius-sm);
+    background: var(--amber);
+    color: #2c1a08;
+    font-size: 14px;
+    letter-spacing: 0.08em;
+}
+.shop-card button:disabled {
+    border-color: var(--panel-rim);
+    background: rgba(58, 43, 31, 0.6);
+    color: var(--chalk-dim);
+}
+
+/* --------------------------------------------------------------------------
+   Daily, quests, stats, settings
+--------------------------------------------------------------------------- */
+
+.reward-track {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+}
+.reward-day {
+    display: flex;
+    min-height: 88px;
+    flex-direction: column;
+    justify-content: center;
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-sm);
+    background: var(--surface-1);
+    padding: 12px;
+    box-shadow: var(--edge), var(--lift);
+}
+.reward-day:last-child {
+    grid-column: 1 / -1;
+    border-color: rgba(232, 163, 61, 0.55);
+}
+.reward-day.current {
+    outline: 2px solid var(--viridian);
+    outline-offset: -3px;
+}
+.reward-day span,
+.reward-day small {
+    color: var(--chalk-dim);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+}
+.reward-day strong {
+    color: var(--lamp);
+    font-size: 28px;
+    font-weight: 400;
+}
+.claim-action {
+    width: 100%;
+    min-height: 52px;
+    margin-top: 14px;
+    border: 1px solid rgba(255, 228, 176, 0.45);
+    border-radius: var(--radius-sm);
+    background: var(--viridian);
+    color: #072019;
+    font-size: 14px;
+    letter-spacing: 0.08em;
+}
+.claim-action:disabled {
+    border-color: var(--panel-rim);
+    background: rgba(58, 43, 31, 0.6);
+    color: var(--chalk-dim);
+}
+
+.quest-list,
+.settings-list {
+    display: grid;
+    gap: 10px;
+}
+.quest-card {
+    border: 1px solid var(--hairline);
+    border-left: 3px solid var(--viridian);
+    border-radius: var(--radius-sm);
+    background: var(--surface-1);
+    padding: 14px;
+    box-shadow: var(--edge), var(--lift);
+}
+.quest-card div {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 13px;
+    letter-spacing: 0.08em;
+}
+.quest-card progress {
+    width: 100%;
+    height: 6px;
+    margin-top: 12px;
+    accent-color: var(--viridian);
+}
+.quest-card button {
+    min-width: 96px;
+    min-height: 44px;
+    margin-top: 10px;
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-sm);
+    background: rgba(58, 43, 31, 0.7);
+    color: var(--chalk);
+    font-size: 12px;
+    letter-spacing: 0.06em;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 9px;
+}
+.stats-grid article {
+    display: flex;
+    min-height: 100px;
+    flex-direction: column;
+    justify-content: space-between;
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-sm);
+    background: var(--surface-1);
+    padding: 14px;
+    box-shadow: var(--edge), var(--lift);
+}
+.stats-grid span {
+    color: var(--chalk-dim);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+}
+.stats-grid strong {
+    color: var(--lamp);
+    font-size: 30px;
+    font-weight: 400;
+}
+
+.setting-row,
+.setting-slider {
+    display: flex;
+    min-height: 56px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    border-bottom: 1px solid rgba(255, 226, 180, 0.12);
+}
+.setting-row > span,
+.setting-slider > span {
+    font-size: 13px;
+    letter-spacing: 0.08em;
+}
+.setting-row input[type="checkbox"],
+.setting-actions input[type="checkbox"] {
+    width: 46px;
+    height: 26px;
+    accent-color: var(--viridian);
+}
+.setting-slider {
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 10px 0;
+}
+.setting-slider input {
+    width: 100%;
+    accent-color: var(--amber);
+}
+.setting-row button,
+.setting-row select {
+    min-height: 44px;
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-sm);
+    background: rgba(40, 29, 21, 0.85);
+    padding: 0 12px;
+    color: var(--chalk);
+}
+.setting-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.segmented {
+    display: flex;
+    gap: 6px;
+}
+.segmented button.active {
+    border-color: var(--amber);
+    color: var(--amber);
+}
+
+/* --------------------------------------------------------------------------
+   In-run HUD
+--------------------------------------------------------------------------- */
+
+.game-hud {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px max(14px, var(--safe-right)) 12px max(14px, var(--safe-left));
+}
+
+/* The carried cut is painted on the canvas, which is BELOW this overlay, so a
+   cut dragged across the rail slid behind the buttons — the one moment in the
+   game when the player is looking straight at it. The rail gets out of the way
+   for the length of the drag; nothing on it changes meanwhile. */
+.carrying .game-hud,
+.carrying .helper-bar {
+    opacity: 0.16;
+    transition: opacity 120ms ease-out;
+}
+.game-hud,
+.helper-bar {
+    transition: opacity 200ms ease-out 90ms;
+}
+.hud-score,
+.hud-combo,
+.hud-menu,
+.hud-settings {
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-sm);
+    background: var(--surface-1);
+    color: var(--chalk);
+    backdrop-filter: blur(3px);
+    box-shadow: var(--edge), var(--lift);
+}
+.hud-score {
+    display: flex;
+    min-height: 48px;
+    flex-direction: column;
+    justify-content: center;
+    padding: 4px 14px;
+    box-shadow: var(--edge), var(--lift);
+}
+.hud-score span,
+.hud-combo span {
+    color: var(--chalk-dim);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+}
+.hud-score strong {
+    color: var(--lamp);
+    font-size: 24px;
+    font-weight: 400;
+    line-height: 1.1;
+    transition: color 160ms ease-out;
+}
+/* The score kicks when it gains, so the number is part of the firing and not
+   a readout that happens to change. */
+.hud-score {
+    transition: transform 180ms cubic-bezier(0.2, 1.5, 0.4, 1);
+}
+.hud-score.bump {
+    transform: scale(1.09);
+}
+.hud-score.bump strong {
+    color: #fffdf4;
+    text-shadow: 0 0 18px rgba(255, 224, 150, 0.85);
+}
+/* Re-keyed on every combo step, so each one re-triggers the pop. */
+.hud-combo {
+    animation: combo-pop 300ms cubic-bezier(0.2, 1.5, 0.4, 1);
+    box-shadow: var(--edge), var(--lift);
+}
+@keyframes combo-pop {
+    from {
+        transform: scale(0.72);
+        opacity: 0;
+    }
+    60% {
+        transform: scale(1.12);
+        opacity: 1;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+.hud-combo {
+    display: flex;
+    min-height: 48px;
+    flex-direction: column;
+    justify-content: center;
+    border-color: rgba(232, 163, 61, 0.5);
+    padding: 4px 12px;
+}
+.hud-combo strong {
+    color: var(--amber);
+    font-size: 22px;
+    font-weight: 400;
+    line-height: 1.1;
+}
+.hud-menu {
+    min-width: 72px;
+    min-height: 48px;
+    padding: 0 12px;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    box-shadow: var(--edge), var(--lift);
+}
+.hud-menu:active {
+    transform: translateY(2px);
+}
+.hud-settings {
+    display: grid;
+    width: 48px;
+    min-height: 48px;
+    place-items: center;
+    /* Pushes itself and everything after it to the trailing edge. */
+    margin-left: auto;
+    padding: 0;
+}
+.hud-settings svg {
+    width: 21px;
+    stroke: currentcolor;
+}
+.hud-settings:active {
+    transform: translateY(2px);
+}
+
+/* The in-run settings card borrows the modal shell but lists rows, not prose. */
+.settings-card h2 {
+    margin-bottom: 16px;
+    font-size: 30px;
+}
+.settings-card .settings-list {
+    margin-bottom: 6px;
+    text-align: left;
+}
+
+.helper-bar {
+    position: absolute;
+    right: max(14px, var(--safe-right));
+    bottom: 0;
+    left: max(14px, var(--safe-left));
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Landscape puts every control in a right-hand rail so the panel keeps the
+   height (see layout.ts). Both clusters are absolutely positioned and sized to
+   the reserves the scene leaves them, rather than laid out in flow and hoped
+   to fit: the tray column starts exactly where the HUD ends and ends exactly
+   where the helper row starts, so an overflowing cluster would sit on the
+   cuts. The safe inset is absorbed INSIDE each cluster's height, because the
+   scene adds it on top of the reserve the same way.
+
+   The HUD is a 2x2 block, and the two columns are the SAME two columns on both
+   rows: a wide readout on the left, a compact one on the right. Score over
+   Menu, shards over the gear. Three unequal columns left the gear stranded
+   mid-air with a hole beside it — every edge here lines up with the edge above
+   it, which is the whole reason the rail reads as one object. Nothing may spill
+   left over the panel. */
+@media (orientation: landscape) {
+    .game-hud {
+        position: absolute;
+        top: var(--box-y);
+        /* Same anchor as the scene's rail: SIDE_MARGIN (26 design units) in
+           from the frame edge, or the right safe inset when that is larger. */
+        right: calc(var(--box-x) + max(calc(26 * var(--u)), var(--safe-right)));
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        /* Fill the reserve, don't sit at the top of it. The reserve is a share
+           of the short edge and the rows are px, so the taller the frame the
+           more bare bench opened up between the last row and the plank. The
+           type below scales with the same edge so the cards don't go hollow. */
+        grid-template-rows: 1fr 1fr;
+        align-content: stretch;
+        /* The base rule is a flex row with align-items: flex-start. It survives
+           the switch to grid and pins every card to the top of its row, so the
+           rows stretch and the cards do not. */
+        align-items: stretch;
+        gap: 6px;
+        width: var(--rail-width);
+        height: calc(var(--rail-hud) + var(--safe-top));
+        margin-left: auto;
+        padding: max(6px, var(--safe-top)) 0 0;
+    }
+    .hud-score {
+        grid-column: 1;
+        grid-row: 1;
+        min-height: 44px;
+        padding: 3px 12px;
+    }
+    .hud-score span,
+    .hud-combo span {
+        font-size: max(10px, calc(13 * var(--u)));
+    }
+    .hud-score strong {
+        font-size: max(21px, calc(28 * var(--u)));
+    }
+    .helper-shards.hud-shards-top {
+        display: flex;
+        grid-column: 2;
+        grid-row: 1;
+        min-height: 44px;
+        justify-content: center;
+        padding: 0 12px;
+        font-size: max(14px, calc(19 * var(--u)));
+    }
+    .hud-menu {
+        grid-column: 1;
+        grid-row: 2;
+        min-height: 40px;
+        padding: 0 12px;
+        font-size: max(12px, calc(16 * var(--u)));
+    }
+    /* Stretched, so it is exactly as wide as the shards pill above it. A 40px
+       square in an auto column sat off-axis from everything else. */
+    .hud-settings {
+        grid-column: 2;
+        grid-row: 2;
+        width: auto;
+        min-height: 40px;
+        justify-self: stretch;
+        margin-left: 0;
+    }
+    .hud-settings svg {
+        width: max(21px, calc(28 * var(--u)));
+    }
+    /* The combo has no row of its own — a third row would cost the tray about
+       45 design units of height for a pill that is only up for a moment. It
+       rides the score card instead, chipped onto its trailing edge, which is
+       also where the number it multiplies is. */
+    .hud-combo {
+        grid-column: 1;
+        grid-row: 1;
+        z-index: 1;
+        min-height: 0;
+        flex-direction: row;
+        align-items: baseline;
+        justify-self: end;
+        align-self: center;
+        gap: 0;
+        margin-right: 6px;
+        padding: 3px 8px;
+    }
+    /* Only the multiplier shows: the rail is narrow enough that the word
+       "COMBO" reaches back across the SCORE label it is sitting beside, and
+       next to the score the ×N needs no naming. Hidden the accessible way, so
+       the live region still announces it in full. */
+    .hud-combo span {
+        position: absolute;
+        overflow: hidden;
+        width: 1px;
+        height: 1px;
+        clip-path: inset(50%);
+        white-space: nowrap;
+    }
+    .hud-combo strong {
+        font-size: 17px;
+    }
+    .helper-bar {
+        right: calc(var(--box-x) + max(calc(26 * var(--u)), var(--safe-right)));
+        bottom: var(--box-y);
+        left: auto;
+        width: var(--rail-width);
+        height: calc(var(--rail-helper) + var(--safe-bottom));
+        /* Fill the reserve rather than centring a fixed-height button in it.
+           The reserve scales with the short edge, so a 44px button left a
+           growing band of bare bench under the tray on anything but the
+           shortest phone — which is the space that reads as a hole. */
+        align-items: stretch;
+        padding-bottom: var(--safe-bottom);
+        transform: none;
+    }
+    .helper-bar .helper-shards {
+        display: none;
+    }
+    .helper-button {
+        min-height: 44px;
+    }
+}
+
+@media (orientation: portrait) {
+    .hud-shards-top {
+        display: none;
+    }
+    /* Pinned to the reserve the scene leaves it, exactly as in landscape. Left
+       to size itself the bar grows with the safe inset and the button content,
+       and once it outgrows HELPER_RESERVE it climbs over the tray plank. */
+    .helper-bar {
+        height: calc(158 * var(--u) + var(--safe-bottom));
+        align-items: stretch;
+        padding-bottom: var(--safe-bottom);
+    }
+}
+.helper-button {
+    display: flex;
+    min-height: 52px;
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-sm);
+    background: var(--surface-1);
+    color: var(--chalk);
+    backdrop-filter: blur(3px);
+    box-shadow: var(--edge), var(--lift);
+}
+.helper-button.active {
+    border-color: var(--amber);
+    background: var(--surface-3);
+    color: var(--lamp);
+}
+.helper-label {
+    font-size: 12px;
+    letter-spacing: 0.08em;
+}
+.helper-cost {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--chalk-dim);
+    font-size: 11px;
+}
+.helper-cost.unaffordable {
+    color: #d0706a;
+}
+.helper-shards {
+    display: flex;
+    min-height: 52px;
+    align-items: center;
+    gap: 7px;
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-sm);
+    background: var(--surface-1);
+    padding: 0 12px;
+    color: var(--lamp);
+    font-size: 15px;
+    backdrop-filter: blur(3px);
+    box-shadow: var(--edge), var(--lift);
+}
+
+/* Modal run cards: the stuck exit and the results. */
+.run-card {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 24px max(20px, var(--safe-right)) max(24px, var(--safe-bottom)) max(20px, var(--safe-left));
+    background: rgba(9, 6, 4, 0.74);
+    backdrop-filter: blur(6px);
+    animation: card-in 220ms ease-out;
+}
+.run-card-body {
+    width: min(100%, 380px);
+    max-height: 100%;
+    overflow-y: auto;
+    border: 1px solid rgba(255, 228, 176, 0.26);
+    border-radius: var(--radius-sm);
+    background: rgba(20, 18, 22, 0.96);
+    padding: 22px 20px;
+    text-align: center;
+    overscroll-behavior: contain;
+}
+.run-card-body h2 {
+    margin: 6px 0 12px;
+    font-family: var(--display);
+    color: var(--lamp);
+    font-size: 42px;
+    font-weight: 400;
+    line-height: 1;
+    letter-spacing: 0.04em;
+    text-shadow: 0 0 26px rgba(232, 163, 61, 0.4);
+}
+.run-card-copy {
+    margin: 0 0 16px;
+    color: var(--chalk);
+    font-size: 14px;
+    font-style: italic;
+    line-height: 1.45;
+}
+.results-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin: 0 0 16px;
+}
+.results-grid div {
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-sm);
+    background: rgba(14, 10, 7, 0.6);
+    padding: 10px 8px;
+}
+.results-grid dt {
+    color: var(--chalk-dim);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+}
+.results-grid dd {
+    margin: 4px 0 0;
+    color: var(--lamp);
+    font-size: 20px;
+}
+.results-grid .doubled {
+    color: var(--viridian);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+}
+
+.card-action {
+    display: block;
+    width: 100%;
+    min-height: 50px;
+    margin-top: 9px;
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-sm);
+    background: rgba(58, 43, 31, 0.8);
+    color: var(--chalk);
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    box-shadow: var(--edge), var(--lift);
+}
+.card-action.primary {
+    border-color: rgba(255, 228, 176, 0.5);
+    background: var(--amber);
+    color: #2c1a08;
+}
+.card-action.rewarded {
+    border-color: rgba(63, 111, 216, 0.6);
+    background: var(--cobalt);
+    color: #eaf1ff;
+}
+.card-action.quiet {
+    background: transparent;
+    color: var(--chalk-dim);
+    font-size: 12px;
+}
+.card-action:disabled {
+    opacity: 0.45;
+}
+.stuck-note {
+    margin: 10px 0 0;
+    color: var(--chalk-dim);
+    font-size: 12px;
+    font-style: italic;
+    line-height: 1.4;
+}
+
+.pause-overlay {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    background: rgba(9, 6, 4, 0.76);
+    backdrop-filter: blur(5px);
+}
+.pause-overlay > div {
+    min-width: 210px;
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-sm);
+    background: rgba(20, 18, 22, 0.96);
+    padding: 24px;
+    text-align: center;
+}
+.pause-overlay strong {
+    display: block;
+    margin-top: 6px;
+    color: var(--lamp);
+    font-size: 32px;
+    font-weight: 400;
+    letter-spacing: 0.1em;
+}
+
+.toast {
+    position: absolute;
+    z-index: 50;
+    right: max(18px, var(--safe-right));
+    bottom: max(18px, var(--safe-bottom));
+    left: max(18px, var(--safe-left));
+    min-height: 48px;
+    border: 1px solid rgba(255, 228, 176, 0.5);
+    border-radius: var(--radius-sm);
+    background: rgba(26, 23, 28, 0.96);
+    color: var(--lamp);
+    padding: 12px 14px;
+    font-size: 13px;
+    letter-spacing: 0.1em;
+    animation: card-in 200ms ease-out;
+}
+
+/* Announced, never drawn. */
+.sr-only {
+    position: absolute;
+    overflow: hidden;
+    width: 1px;
+    height: 1px;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+button:disabled {
+    cursor: not-allowed;
+    opacity: 0.62;
+}
+
+.fatal-error {
+    display: grid;
+    min-height: 100%;
+    place-content: center;
+    gap: 12px;
+    padding: 32px;
+    text-align: center;
+}
+.fatal-error h1,
+.fatal-error p {
+    margin: 0;
+}
+.fatal-error button {
+    min-height: 48px;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: var(--amber);
+    color: #2c1a08;
+}
+
+/* --------------------------------------------------------------------------
+   Loading
+--------------------------------------------------------------------------- */
+
+.loading-screen {
+    display: flex;
+    height: 100%;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 22px;
+    padding-right: max(34px, var(--safe-right));
+    padding-left: max(34px, var(--safe-left));
+    text-align: center;
+}
+/* A small leaded rose: the same motif the backdrop is built around. */
+.loading-mark {
+    display: grid;
+    grid-template-columns: repeat(4, 26px);
+    gap: 3px;
+    padding: 8px;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: rgba(8, 7, 9, 0.5);
+}
+.loading-cell {
+    width: 26px;
+    height: 26px;
+    border: 1px solid var(--came);
+    animation: glass-breathe 2.4s ease-in-out infinite;
+}
+.loading-cell.empty {
+    border-color: rgba(34, 32, 42, 0.5);
+    background: rgba(46, 52, 54, 0.5);
+    box-shadow: none;
+    animation: none;
+}
+.loading-cell.amber {
+    background: var(--amber);
+}
+.loading-cell.cobalt {
+    background: var(--cobalt);
+}
+.loading-cell.viridian {
+    background: var(--viridian);
+}
+.loading-cell.rose {
+    background: var(--rose);
+}
+.loading-cell.plum {
+    background: var(--plum);
+}
+.loading-cell.ochre {
+    background: var(--ruby);
+}
+.loading-title {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+.loading-title strong {
+    font-family: var(--display);
+    color: var(--lamp);
+    font-size: 38px;
+    font-weight: 400;
+    letter-spacing: 0.08em;
+    text-shadow: 0 0 26px rgba(232, 163, 61, 0.4);
+}
+.loading-title span {
+    color: var(--chalk-dim);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+}
+.loading-track {
+    width: 100%;
+    max-width: 280px;
+    height: 8px;
+    overflow: hidden;
+    border: 1px solid var(--hairline);
+    border-radius: 2px;
+    background: rgba(12, 8, 6, 0.8);
+}
+.loading-fill {
+    height: 100%;
+    min-width: 3px;
+    background: var(--amber);
+    transition: width 220ms ease-out;
+}
+.loading-copy {
+    margin: 0;
+    color: var(--chalk-dim);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+}
+
+@keyframes glass-breathe {
+    0%,
+    100% {
+        filter: brightness(1);
+    }
+    50% {
+        filter: brightness(1.28);
+    }
+}
+
+/* Screens fade and settle rather than cutting. The distance is deliberately
+   small — a big slide on every navigation is the kind of motion that stops
+   being charming on the fiftieth run. */
+.menu-shell,
+.subscreen,
+.loading-screen {
+    animation: screen-in 260ms ease-out;
+}
+
+@keyframes screen-in {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+/* The bench arrives by opening up, like a panel being set down in front of you. */
+.bench-in {
+    animation: bench-in 380ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes bench-in {
+    from {
+        opacity: 0;
+        transform: scale(0.965);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@keyframes card-in {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+/* --------------------------------------------------------------------------
+   Development-only diagnostics (removed from production by an env-gated import)
+--------------------------------------------------------------------------- */
+
+.development-tools {
+    position: absolute;
+    z-index: 100;
+    top: max(8px, var(--safe-top));
+    right: max(8px, var(--safe-right));
+    width: min(286px, calc(100% - 16px - var(--safe-left) - var(--safe-right)));
+    border: 1px solid #6b7c89;
+    border-radius: var(--radius-sm);
+    background: rgba(8, 13, 20, 0.96);
+    color: #e8edf1;
+    font:
+        700 12px / 1.35 ui-monospace,
+        monospace;
+    box-shadow: 0 12px 36px #000a;
+    touch-action: pan-y;
+}
+.development-tools button,
+.development-tools select,
+.development-tools input {
+    min-height: 44px;
+}
+.development-tools-toggle {
+    width: 100%;
+    border: 0;
+    background: #f4c95d;
+    padding: 8px 12px;
+    color: #10151f;
+    text-align: left;
+    font-weight: 900;
+}
+.development-tools-body {
+    display: grid;
+    max-height: min(68dvh, 560px);
+    gap: 8px;
+    overflow-y: auto;
+    padding: 10px;
+    overscroll-behavior: contain;
+}
+.development-tools dl {
+    display: grid;
+    gap: 3px;
+    margin: 0;
+}
+.development-tools dl > div {
+    display: grid;
+    grid-template-columns: 94px minmax(0, 1fr);
+    gap: 8px;
+}
+.development-tools dt {
+    color: #93a8b8;
+}
+.development-tools dd {
+    min-width: 0;
+    margin: 0;
+    overflow-wrap: anywhere;
+    color: #f4c95d;
+}
+.development-tools label {
+    display: grid;
+    gap: 4px;
+}
+.development-tools select,
+.development-tools input[type="range"] {
+    width: 100%;
+}
+.development-tools select,
+.development-reset {
+    border: 1px solid #596875;
+    background: #18222d;
+    padding-inline: 10px;
+    color: #e8edf1;
+}
+.development-check {
+    grid-template-columns: 1fr 44px;
+    align-items: center;
+}
+.development-check input {
+    width: 22px;
+    justify-self: center;
+}
+.development-reset {
+    font-weight: 900;
+}
+.development-tools p {
+    margin: 0;
+    color: #93a8b8;
+    font-size: 11px;
+}
+.development-safe-area {
+    position: absolute;
+    z-index: 99;
+    top: var(--safe-top);
+    right: var(--safe-right);
+    bottom: var(--safe-bottom);
+    left: var(--safe-left);
+    border: 2px dashed #f4c95d;
+    background: rgba(244, 201, 93, 0.06);
+    pointer-events: none;
+}
+
+/* --------------------------------------------------------------------------
+   Responsive
+--------------------------------------------------------------------------- */
+
+@media (max-height: 680px) {
+    .menu-shell {
+        gap: 10px;
+    }
+    .menu-logo h1 {
+        font-size: 44px;
+    }
+    .menu-subtitle {
+        display: none;
+    }
+    .menu-tile {
+        min-height: 50px;
+    }
+    .loading-mark {
+        grid-template-columns: repeat(4, 20px);
+    }
+    .loading-cell {
+        width: 20px;
+        height: 20px;
+    }
+}
+
+@media (orientation: landscape) {
+    .menu-shell,
+    .subscreen {
+        width: 100%;
+        max-width: 1180px;
+        margin-inline: auto;
+        padding-right: max(clamp(20px, 4vmin, 48px), var(--safe-right));
+        padding-left: max(clamp(20px, 4vmin, 48px), var(--safe-left));
+    }
+
+    /* Reserve the safe inset and NOTHING else. pt-safe-top/pb-safe-bottom each
+       add 8px of their own on top of it, which is fine in portrait and is pure
+       loss here: it is 16px off the short edge, and because it lands under the
+       build stamp it reads as part of the dead strip rather than as padding.
+       The remaining gap below the stamp is now exactly the inset the host
+       reports — if it still looks too tall, the host's number is the thing to
+       check (?debug=1 shows HOST SAFE next to the applied value). */
+    .menu-shell {
+        padding-top: var(--safe-top);
+        padding-bottom: var(--safe-bottom);
+        display: grid;
+        grid-template-areas:
+            "identity summary"
+            "identity play"
+            "identity navigation"
+            "identity stamp";
+        grid-template-rows: auto auto auto auto;
+        grid-template-columns: minmax(200px, 0.9fr) minmax(300px, 1.1fr);
+        align-content: center;
+        column-gap: clamp(18px, 5vw, 80px);
+        row-gap: clamp(10px, 1.8dvh, 18px);
+    }
+
+    .menu-header {
+        grid-area: identity;
+        align-self: center;
+    }
+    .menu-logo h1 {
+        font-size: clamp(44px, 9dvh, 72px);
+    }
+    .menu-subtitle {
+        max-width: 26rem;
+        margin-inline: auto;
+    }
+    .player-strip {
+        grid-area: summary;
+        /* The bottom anchor is a portrait concern; the grid places it here. */
+        margin-top: 0;
+    }
+    .play-button {
+        grid-area: play;
+    }
+    .menu-grid {
+        grid-area: navigation;
+    }
+    .menu-tile:last-child:nth-child(odd) {
+        grid-column: auto;
+    }
+    .build-stamp {
+        grid-area: stamp;
+    }
+
+    .subscreen-header h2 {
+        font-size: clamp(28px, 6.6dvh, 42px);
+    }
+
+    /* One row per screen-width is a portrait shape: in landscape it strands a
+       label at one edge and its control at the other. Columns halve the height
+       and keep label and control together. The day's work is always exactly
+       three jobs, so three columns leaves no odd cell. */
+    .settings-list {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        column-gap: 26px;
+    }
+    .quest-list {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        column-gap: 12px;
+    }
+    .reward-track {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+    .reward-day:last-child {
+        grid-column: auto;
+    }
+    .stats-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    .palette-card {
+        grid-template-columns: auto minmax(0, 1fr) auto;
+    }
+    .palette-action,
+    .palette-locked {
+        grid-column: auto;
+        min-width: 150px;
+    }
+    .results-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+    .run-card-body {
+        width: min(100%, 560px);
+    }
+}
+
+/* A landscape phone has roughly a third of the height a portrait one does, and
+   every sub-screen row was authored at portrait size: the header alone took a
+   fifth of the screen and barely two cards fitted under it. Everything below
+   trades vertical size for rows on screen — the type stays at readable sizes,
+   the padding and the decorative height go. */
+@media (orientation: landscape) and (max-height: 600px) {
+    .menu-logo h1 {
+        font-size: clamp(40px, 9dvh, 52px);
+    }
+    .menu-subtitle {
+        display: none;
+    }
+    .menu-icon {
+        width: 32px;
+        height: 32px;
+    }
+
+    /* A phone in landscape has height to spare here but no way to spend it:
+       with fixed rows the whole control column sat as a short stack, all the
+       slack pooled under the build stamp, and since the bottom safe inset
+       lands there too the gap below was always the taller one. That asymmetry
+       is what reads as a broken screen. Fractional rows hand the slack to the
+       two control blocks instead, so the column fills the frame and the only
+       space left under the stamp is the inset itself. Taller landscape frames
+       keep the centred auto-row layout — the same rule there inflates a menu
+       tile to 130px. */
+    .menu-shell {
+        grid-template-rows: auto minmax(54px, 0.9fr) minmax(0, 2fr) auto;
+    }
+    .play-button {
+        min-height: 54px;
+        max-height: 104px;
+    }
+    .menu-grid {
+        grid-auto-rows: minmax(46px, 1fr);
+    }
+    .menu-tile {
+        min-height: 46px;
+        max-height: 88px;
+    }
+
+    .subscreen {
+        padding-top: max(8px, var(--safe-top));
+    }
+    .subscreen-header {
+        gap: 10px;
+        padding: 2px 2px 8px;
+    }
+    .subscreen-header h2 {
+        font-size: 26px;
+    }
+    .back-button {
+        width: 42px;
+        height: 42px;
+    }
+    .subscreen-content {
+        display: flex;
+        flex-direction: column;
+        padding: 12px 14px max(14px, var(--safe-bottom));
+    }
+    /* The scroll region fills the shell whether or not its content does, so a
+       screen with only a handful of rows ended in a large empty slab of card.
+       Letting the one list inside grow puts that height into the rows instead
+       of leaving it under them. Short landscape only: with more height to
+       hand out the same rule inflates a settings row to 200px. */
+    .reward-track,
+    .quest-list,
+    .stats-grid {
+        /* Grow into the spare height, never shrink below the content. */
+        flex: 1 0 auto;
+    }
+    .screen-copy {
+        margin-bottom: 12px;
+        font-size: 13px;
+    }
+
+    /* Cards: shorter, tighter, same information. */
+    .reward-day {
+        min-height: 64px;
+        padding: 8px 10px;
+    }
+    .reward-day strong {
+        font-size: 22px;
+    }
+    /* A tile that grew to fill the height should not push its number to the
+       floor — label and number stay together in the middle. */
+    .stats-grid article {
+        min-height: 68px;
+        justify-content: center;
+        gap: 6px;
+        padding: 9px 11px;
+    }
+    .stats-grid strong {
+        font-size: 22px;
+    }
+    /* Likewise for the day's work, one row of three: job and progress stay
+       together at the top and the action drops to the foot, rather than all
+       three drifting apart down an over-tall card. */
+    .quest-card {
+        display: flex;
+        flex-direction: column;
+    }
+    .quest-card progress {
+        margin-bottom: auto;
+    }
+    .quest-card button {
+        align-self: flex-start;
+    }
+    .quest-card,
+    .shop-card,
+    .palette-card {
+        padding: 9px 11px;
+    }
+    .quest-card progress {
+        margin-top: 8px;
+    }
+    .quest-card button,
+    .setting-row button,
+    .setting-row select {
+        min-height: 38px;
+    }
+    .setting-row,
+    .setting-slider {
+        min-height: 44px;
+    }
+    .claim-action,
+    .shop-card button {
+        min-height: 44px;
+        margin-top: 10px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+        transition-duration: 0.001ms !important;
+        animation-duration: 0.001ms !important;
+    }
+}
+
+html[data-reduced-motion="true"] *,
+html[data-reduced-motion="true"] *::before,
+html[data-reduced-motion="true"] *::after {
+    transition-duration: 0.001ms !important;
+    animation-duration: 0.001ms !important;
+}
