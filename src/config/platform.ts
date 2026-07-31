@@ -15,7 +15,7 @@
  * them stay hidden rather than pretending to work.
  */
 export const PLATFORM_IDS = Object.freeze({
-    gameId: "REPLACE_WITH_RUN_GAME_ID",
+    gameId: "HhZKdkXCbYVAhxdHKqTV",
 
     /** Rewarded: the once-per-run continue from the stuck card. */
     rewardedSecondFiring: "leadlight_second_firing_rewarded",
