@@ -33,6 +33,15 @@ interface LeadlightQa {
     grantShards(amount: number): void;
     /** Force the run into the stuck state, to review that card. */
     forceStuck(): void;
+    /**
+     * Raise the host pause overlay.
+     *
+     * The real one only ever comes from a RUN lifecycle event, so without this
+     * the overlay — and the tap that dismisses it — cannot be exercised
+     * anywhere but on a device. That is precisely how it shipped with no way
+     * out of a pause whose onResume never arrived.
+     */
+    setPaused(value: boolean): void;
     /** End the run locally, to review the results card. */
     forceResults(): void;
     /** Paint a full spread of glass so the lattice joins can be reviewed. */
@@ -104,6 +113,9 @@ export function installBrowserQaContract(): void {
         },
         grantShards(amount) {
             store.patch({ shards: Math.max(0, store.get().shards + Math.floor(amount)) });
+        },
+        setPaused(value) {
+            store.patch({ paused: Boolean(value) });
         },
         forceStuck() {
             const controller = getRunController();

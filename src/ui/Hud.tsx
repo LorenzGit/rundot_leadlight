@@ -18,6 +18,7 @@ import { runtimeServices } from "../systems/runtimeServices.ts";
 import { saveSystem } from "../systems/save.ts";
 import GearIcon from "./GearIcon.tsx";
 import SettingToggle from "./SettingToggle.tsx";
+import { resumeFromPause, usePauseGate } from "./usePauseGate.ts";
 
 /**
  * Roll a displayed number toward its target instead of snapping.
@@ -73,13 +74,15 @@ export default function Hud() {
     const score = useStore((s) => s.score);
     const combo = useStore((s) => s.combo);
     const shards = useStore((s) => s.shards);
-    const paused = useStore((s) => s.paused);
     const runStatus = useStore((s) => s.runStatus);
     const chiselArmed = useStore((s) => s.chiselArmed);
     const dragging = useStore((s) => s.dragging);
     const summary = useStore((s) => s.runSummary);
     const reducedMotion = useStore((s) => s.reducedMotion);
     const rolling = useRollingNumber(score, reducedMotion);
+    // Not `state.paused` directly: see usePauseGate for why a host pause is
+    // not the same thing as a pause worth showing the player.
+    const showPause = usePauseGate();
     const [settingsOpen, setSettingsOpen] = useState(false);
 
     const leave = useCallback(() => {
@@ -170,13 +173,24 @@ export default function Hud() {
             {summary && <ResultsCard />}
             {settingsOpen && <GameSettingsCard onClose={() => setSettingsOpen(false)} />}
 
-            {paused && (
-                <div className="pause-overlay">
+            {/* The host owns the pause, but it must not own the ONLY way out.
+                onPause fires for a platform dialog or a switch-away and the
+                matching onResume can simply not arrive — and with a plain div
+                inside a pointer-events-none overlay the run was then stuck
+                until the player killed the app.
+
+                A tap is the safe escape hatch precisely because it proves the
+                host is not covering us: if a platform dialog were on top, the
+                player could not reach this. So resuming on it can never fight
+                an overlay the host still has up. */}
+            {showPause && (
+                <button type="button" className="pause-overlay pointer-events-auto" onClick={resumeFromPause}>
                     <div>
                         <p className="eyebrow">{t("PausedEyebrow")}</p>
                         <strong>{t("Paused")}</strong>
+                        <span className="pause-hint">{t("PausedResume")}</span>
                     </div>
-                </div>
+                </button>
             )}
         </div>
     );

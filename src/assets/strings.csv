@@ -23,6 +23,7 @@ LabelDay,DAY,DIA,DÍA
 LoadingCopy,HEATING THE KILN…,AQUECENDO O FORNO…,CALENTANDO EL HORNO…
 Paused,PAUSED,PAUSADO,EN PAUSA
 PausedEyebrow,THE BENCH WAITS,A BANCADA ESPERA,EL BANCO ESPERA
+PausedResume,TAP TO RESUME,TOQUE PARA CONTINUAR,TOCA PARA CONTINUAR
 HelperChisel,CHISEL,CINZEL,CINCEL
 HelperChiselHint,Remove one placed cell.,Remove uma célula colocada.,Quita una celda colocada.
 HelperChiselArmed,Tap a cell to chip it out.,Toque uma célula para removê-la.,Toca una celda para quitarla.

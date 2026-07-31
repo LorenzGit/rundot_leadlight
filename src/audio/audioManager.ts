@@ -216,7 +216,7 @@ class AudioManager {
     private suppressedSfx = 0;
     private paused = false;
     private hostPaused = false;
-    private adVisible = false;
+    private hostOverlayVisible = false;
     private pageHidden = document.visibilityState !== "visible";
     private bound = false;
     /** Raised by the scene so the firing chime climbs with the combo. */
@@ -252,11 +252,15 @@ class AudioManager {
     }
 
     /**
-     * Ads are not guaranteed to emit host lifecycle events. Keep this
-     * interruption separate from persisted player volume/mute settings.
+     * Any host-owned UI the player is interacting with — a rewarded video, an
+     * interstitial, a checkout sheet. Not just ads: music playing over an open
+     * purchase flow is the same defect as music over an ad, and checkout was
+     * only ever protected by the host's own pause. Kept separate from the
+     * persisted volume/mute settings, and separate from the host pause, so
+     * neither one can be lifted while the other still applies.
      */
-    setAdVisible(visible: boolean): void {
-        this.adVisible = visible;
+    setHostOverlayVisible(visible: boolean): void {
+        this.hostOverlayVisible = visible;
         this.applyPauseState();
     }
 
@@ -266,7 +270,7 @@ class AudioManager {
     }
 
     private applyPauseState(): void {
-        this.paused = this.hostPaused || this.pageHidden || this.adVisible;
+        this.paused = this.hostPaused || this.pageHidden || this.hostOverlayVisible;
         if (!this.context) return;
         if (this.paused) {
             this.stopAmbience();

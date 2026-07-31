@@ -1,6 +1,6 @@
 {
   "name": "leadlight",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "LEADLIGHT \u2014 a portrait stained-glass block puzzle for RUN.world, built with PixiJS 8 (WebGPU-first).",
   "private": true,
   "license": "SEE LICENSE IN LICENSE.md",

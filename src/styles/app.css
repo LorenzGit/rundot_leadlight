@@ -1333,12 +1333,16 @@ svg.gear-icon {
     line-height: 1.4;
 }
 
+/* A button, not a div: the whole scrim is the escape hatch. See the note at
+   the call site for why a tap is the safe signal to resume on. */
 .pause-overlay {
     position: absolute;
     inset: 0;
     display: grid;
     place-items: center;
+    border: none;
     background: rgba(9, 6, 4, 0.76);
+    color: inherit;
     backdrop-filter: blur(5px);
 }
 .pause-overlay > div {
@@ -1355,6 +1359,13 @@ svg.gear-icon {
     color: var(--lamp);
     font-size: 32px;
     font-weight: 400;
+    letter-spacing: 0.1em;
+}
+.pause-hint {
+    display: block;
+    margin-top: 14px;
+    color: var(--chalk-dim);
+    font-size: 11px;
     letter-spacing: 0.1em;
 }
 

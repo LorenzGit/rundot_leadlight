@@ -515,20 +515,46 @@ export async function rearmLocalNotification(input: {
 
 export type VerifiedActionResult = "verified" | "unavailable" | "cancelled" | "failed";
 
+/**
+ * How many host-owned overlays are open on our behalf.
+ *
+ * A host pause that arrives while this is zero is one we did not ask for,
+ * which is what lets the shell tell a spurious pause from a real one. It has
+ * to count EVERY host-mediated overlay, not just ads: checkout pauses us too,
+ * and treating that as spurious would resume the game — and its music — over
+ * an open purchase sheet.
+ */
+let hostOverlays = 0;
+
+/** DEV-only: drive the overlay guard from the QA harness. */
+export const __testWithHostOverlay = import.meta.env.DEV ? withHostOverlay : undefined;
+
+export function hostOverlayInFlight(): boolean {
+    return hostOverlays > 0;
+}
+
+/** Run a host-owned overlay: audio interrupted and pauses honoured throughout. */
+async function withHostOverlay<T>(run: () => Promise<T>): Promise<T> {
+    hostOverlays += 1;
+    audioManager.setHostOverlayVisible(true);
+    try {
+        return await run();
+    } finally {
+        hostOverlays -= 1;
+        if (hostOverlays === 0) audioManager.setHostOverlayVisible(false);
+    }
+}
+
 export async function showVerifiedRewardedAd(id: string, name: string): Promise<VerifiedActionResult> {
     if (!capabilities.ads) return "unavailable";
     try {
         const ready = await withTimeout(RundotGameAPI.ads.isRewardedAdReadyAsync(), 2_000, "ads.ready");
         if (!ready) return "unavailable";
-        audioManager.setAdVisible(true);
-        let completed = false;
-        try {
-            // Do not timeout a user-mediated overlay: the audio interruption
-            // must last until the host tells us it has actually closed.
-            completed = await RundotGameAPI.ads.showRewardedAdAsync({ adDisplayId: id, adDisplayName: name });
-        } finally {
-            audioManager.setAdVisible(false);
-        }
+        // Do not timeout a user-mediated overlay: the interruption must last
+        // until the host tells us it has actually closed.
+        const completed = await withHostOverlay(() =>
+            RundotGameAPI.ads.showRewardedAdAsync({ adDisplayId: id, adDisplayName: name }),
+        );
         return completed === true ? "verified" : "cancelled";
     } catch {
         return "failed";
@@ -544,13 +570,9 @@ export async function showVerifiedInterstitialAd(id: string, name: string): Prom
             "ads.interstitial.ready",
         );
         if (!ready) return "unavailable";
-        audioManager.setAdVisible(true);
-        let displayed = false;
-        try {
-            displayed = await RundotGameAPI.ads.showInterstitialAd({ adDisplayId: id, adDisplayName: name });
-        } finally {
-            audioManager.setAdVisible(false);
-        }
+        const displayed = await withHostOverlay(() =>
+            RundotGameAPI.ads.showInterstitialAd({ adDisplayId: id, adDisplayName: name }),
+        );
         return displayed === true ? "verified" : "unavailable";
     } catch {
         return "failed";
@@ -594,8 +616,10 @@ export async function fetchShopOrderHistory(): Promise<ShopOrderHistoryResponse>
 
 export async function purchaseShopItem(itemId: string, idempotencyKey: string): Promise<ShopPurchaseResponse> {
     // No timeout: checkout is a host-owned UI the player is interacting with,
-    // and racing it would abandon an order that is still open on screen.
-    return RundotGameAPI.shop.purchase(itemId, idempotencyKey);
+    // and racing it would abandon an order that is still open on screen. It
+    // counts as a host overlay for exactly that reason — the game must not
+    // resume, or start playing music, over an open sheet.
+    return withHostOverlay(() => RundotGameAPI.shop.purchase(itemId, idempotencyKey));
 }
 
 /** Continue Android back navigation once the template's own stack is empty. */
