@@ -23,6 +23,7 @@ import {
 import { getMonetizationControls, monetizationTelemetry } from "./monetization/runtime.ts";
 import { localDayKey, serverNow } from "./serverTime.ts";
 
+import { analytics } from "./analytics/analyticsConfig.ts";
 interface PlacementCounters {
     session: number;
     day: number;
@@ -94,9 +95,16 @@ export async function showRewarded(id: PlacementId): Promise<VerifiedActionResul
     if (!rewardedAvailable(id)) return "unavailable";
     const placement = placements.require(id);
     monetizationTelemetry.record("ad_requested", { placement_id: id, format: "rewarded" });
+    // Portfolio-standard names alongside the game's own, so rewarded funnels
+    // compare across titles. Offered-without-complete is a reward/copy problem;
+    // no-offer-at-all is an inventory one, and only these two separate them.
+    analytics.event("rewarded_ad_offered", { ad_display_id: PLACEMENT_DISPLAY_ID[id], placement: id });
 
     const result = await showVerifiedRewardedAd(PLACEMENT_DISPLAY_ID[id], placement.displayName);
     monetizationTelemetry.record("ad_result", { placement_id: id, format: "rewarded", result });
+    if (result === "verified") {
+        analytics.event("rewarded_ad_complete", { ad_display_id: PLACEMENT_DISPLAY_ID[id], placement: id });
+    }
 
     // A cancelled video still consumed an impression opportunity, so it counts
     // toward the caps; only a verified one grants anything.
@@ -166,6 +174,9 @@ export async function maybeShowInterstitial(): Promise<VerifiedActionResult> {
     monetizationTelemetry.record("ad_requested", { placement_id: PLACEMENT.betweenRuns, format: "interstitial" });
     const result = await showVerifiedInterstitialAd(PLACEMENT_DISPLAY_ID[PLACEMENT.betweenRuns], placement.displayName);
     monetizationTelemetry.record("ad_result", { placement_id: PLACEMENT.betweenRuns, format: "interstitial", result });
+    if (result === "verified") {
+        analytics.event("interstitial_shown", { ad_display_id: PLACEMENT_DISPLAY_ID[PLACEMENT.betweenRuns] });
+    }
 
     if (result === "verified") {
         const counter = countersFor(PLACEMENT.betweenRuns);

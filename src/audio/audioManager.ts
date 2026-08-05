@@ -237,7 +237,15 @@ class AudioManager {
             this.ensureGraph();
             if (!this.context) return false;
             if (this.paused) return false;
-            if (this.context.state === "suspended") await this.context.resume();
+            if (this.context.state === "suspended") {
+                // WebKit leaves resume() pending FOREVER when the call is not
+                // backed by recognized user activation. Never let that hang a
+                // caller — UI actions may await unlock before proceeding.
+                await Promise.race([
+                    this.context.resume(),
+                    new Promise<void>((resolve) => window.setTimeout(resolve, 300)),
+                ]);
+            }
             this.sync();
             return this.context.state === "running";
         } catch (error) {

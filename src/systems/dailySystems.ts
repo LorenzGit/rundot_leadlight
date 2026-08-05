@@ -4,6 +4,7 @@ import { runtimeServices } from "./runtimeServices.ts";
 import { saveSystem } from "./save.ts";
 import { hasServerTime, localDayKey, serverNow } from "./serverTime.ts";
 
+import { returnReminders } from "./retention/retentionConfig.ts";
 /** The seven-day shard ladder — DESIGN.md §7. */
 const REWARDS = [20, 25, 30, 40, 50, 60, 120] as const;
 const inFlight = new Set<string>();
@@ -114,6 +115,10 @@ export const dailySystems = {
                 shards: view.reward,
                 authoritative: view.authoritative,
             });
+        // Kill switch: the 24h reminder promises this reward. Leaving it scheduled
+        // pings the player about something they just claimed, which is exactly how
+        // a useful notification becomes a muted one.
+        void returnReminders.cancel("d1");
         return { ok, reason: ok ? "CLAIMED" : "SAVE FAILED", shards: ok ? view.reward : 0 };
     },
 

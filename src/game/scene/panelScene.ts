@@ -10,7 +10,7 @@
  * at. The ghost snaps cell-to-cell and turns red the moment the drop would be
  * illegal, so a bad drop is never a surprise.
  */
-import { type Application, Container, type FederatedPointerEvent, Graphics, Sprite, Texture } from "pixi.js";
+import { type Application, Container, type FederatedPointerEvent, Graphics, Rectangle, Sprite, Texture } from "pixi.js";
 import {
     context2d,
     createCanvas,
@@ -30,6 +30,7 @@ import { createTweenController, ease } from "../tween.ts";
 import { type Ambience, createAmbience } from "./ambience.ts";
 import { cellAtPoint, cellOrigin, computeLayout, type Insets, type SceneLayout, trayCellSize } from "./layout.ts";
 import { createEffects, type Effects, type FiringCell } from "./vfx.ts";
+import { cellAt } from "../puzzle/board.ts";
 
 export type SceneSfx = "pick" | "place" | "reject" | "fire" | "combo" | "chisel" | "clean";
 export type SceneHaptic = "light" | "medium" | "heavy" | "success" | "warning" | "error";
@@ -189,6 +190,16 @@ export class PanelScene {
         this.rebuildTray();
 
         this.root.eventMode = "static";
+        /*
+         * Input is delegated to the root and hit-tested by hand, so the child
+         * sprites never need to be event targets — and while they are, Pixi
+         * resolves the hover target to a child and reads ITS cursor (none),
+         * which is why setting `root.cursor` alone changed nothing. Turning off
+         * interactive children and giving the root an explicit hit area makes
+         * the root the sole target, so its cursor is the one applied.
+         */
+        this.root.interactiveChildren = false;
+        this.applyHitArea();
         this.root.on("pointerdown", this.onPointerDown);
         this.root.on("pointermove", this.onPointerMove);
         this.root.on("pointerup", this.onPointerUp);
@@ -196,6 +207,7 @@ export class PanelScene {
         this.root.on("pointercancel", this.onPointerUp);
 
         this.offResize = this.stage.onResize(() => {
+            this.applyHitArea();
             this.layout = computeLayout(this.stage.designWidth(), this.stage.designHeight(), this.insets);
             this.applyLayout();
             this.syncBoard();
@@ -563,21 +575,79 @@ export class PanelScene {
         };
         this.moveDrag(point.x, point.y);
         this.callbacks.onDragChanged(true);
+        this.setCursor("grabbing");
         this.callbacks.sfx("pick");
         this.callbacks.haptic("light");
     };
 
+    /** Cover the whole design stage so every pointer position resolves to root. */
+    private applyHitArea(): void {
+        this.root.hitArea = new Rectangle(0, 0, this.stage.designWidth(), this.stage.designHeight());
+    }
+
+    /** Last cursor written, so a per-move write is a no-op when unchanged. */
+    private cursor: "default" | "pointer" | "grabbing" = "default";
+
     private readonly onPointerMove = (event: FederatedPointerEvent): void => {
-        if (!this.drag || event.pointerId !== this.drag.pointerId) return;
+        if (!this.drag || event.pointerId !== this.drag.pointerId) {
+            // Not dragging: the only job is the hover affordance. Input here is
+            // delegated to the root and hit-tested by hand, so no cut or cell is
+            // an interactive object of its own and Pixi has nothing to derive a
+            // cursor from — it has to be resolved per move.
+            this.updateHoverCursor(event);
+            return;
+        }
         const point = event.getLocalPosition(this.root);
         this.drag.moved = true;
         this.moveDrag(point.x, point.y);
     };
 
+    /**
+     * Point the cursor at what a click would actually do: grab a cut from the
+     * tray, or strike a filled cell while the chisel is armed. Anything else is
+     * scenery and keeps the default arrow, so the hand always means "this is
+     * live".
+     */
+    private updateHoverCursor(event: FederatedPointerEvent): void {
+        if (this.run.status === "over") {
+            this.setCursor("default");
+            return;
+        }
+        const point = event.getLocalPosition(this.root);
+        if (this.chiselArmed) {
+            const cell = cellAtPoint(this.layout, point.x, point.y);
+            // A chisel strike only lands on a filled cell, so only those get the
+            // hand — an empty well is not a target. `run.board` is the live
+            // array; boardSnapshot() would clone it on every mouse move.
+            const filled = cell !== null && cellAt(this.run.board, cell.x, cell.y) !== 0;
+            this.setCursor(filled ? "pointer" : "default");
+            return;
+        }
+        this.setCursor(this.traySlotAt(point.x, point.y) === null ? "default" : "pointer");
+    }
+
+    /**
+     * Write the cursor to the canvas directly.
+     *
+     * Setting `root.cursor` alone does nothing here: Pixi applies a target's
+     * cursor when the HOVER TARGET changes, and with input delegated to one
+     * root the target never changes — so a value that varies by position is
+     * never re-read. The root property is kept in sync anyway so Pixi's own
+     * bookkeeping agrees with what is on screen.
+     */
+    private setCursor(cursor: "default" | "pointer" | "grabbing"): void {
+        if (this.cursor === cursor) return;
+        this.cursor = cursor;
+        this.root.cursor = cursor;
+        const canvas = this.app.canvas as HTMLCanvasElement | undefined;
+        if (canvas?.style) canvas.style.cursor = cursor;
+    }
+
     private readonly onPointerUp = (event: FederatedPointerEvent): void => {
         const drag = this.drag;
         if (!drag || event.pointerId !== drag.pointerId) return;
         this.drag = null;
+        this.setCursor("default");
         this.callbacks.onDragChanged(false);
         this.ghostLayer.clear();
 

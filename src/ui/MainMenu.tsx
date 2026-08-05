@@ -57,10 +57,14 @@ function MenuIcon({ name }: { name: MenuIconName }) {
  * be one.
  */
 async function activate(action: () => void): Promise<void> {
-    await audioManager.unlock();
-    audioManager.play("tap");
-    void runtimeServices.haptic("light");
+    // Run the action IMMEDIATELY, then unlock/cue audio as a side effect.
+    // A suspended AudioContext can leave resume() pending; navigation must
+    // never wait on WebAudio.
     action();
+    void audioManager.unlock().then(() => {
+        audioManager.play("tap");
+        void runtimeServices.haptic("light");
+    });
 }
 
 export default function MainMenu() {

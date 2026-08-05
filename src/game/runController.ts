@@ -9,6 +9,7 @@
  * ad reward is applied only on an SDK-confirmed completion.
  */
 import { audioManager, type SfxCue } from "../audio/audioManager.ts";
+import { analytics } from "../systems/analytics/analyticsConfig.ts";
 import { store } from "../state/store.ts";
 import { maybeShowInterstitial, recordCompletedRun, rewardedAvailable, showRewarded } from "../systems/ads.ts";
 import { dailySystems } from "../systems/dailySystems.ts";
@@ -59,7 +60,8 @@ export class RunController {
             seed: this.run.seed,
             palette: store.get().selectedPalette,
         });
-        runtimeServices.funnel(2, "run_started", "leadlight_first_run", 1);
+        analytics.funnelStep("leadlight_first_run", 2);
+        analytics.funnelStep("leadlight_first_run_detail", 1);
     }
 
     detach(): void {
@@ -72,6 +74,7 @@ export class RunController {
 
     readonly sceneCallbacks = {
         onPlaced: (): void => {
+            analytics.funnelStep("leadlight_first_run_detail", 2);
             this.publish();
         },
         onChiselled: (): void => {
@@ -97,6 +100,11 @@ export class RunController {
 
     /** Mirror the run into the store so the DOM HUD can render it. */
     private publish(): void {
+        // Line milestones are read here rather than from a dedicated callback:
+        // publish() is the single place run progress is mirrored out, and the
+        // once-ever marks make repeat calls at the same count free.
+        if (this.run.linesFired >= 1) analytics.funnelStep("leadlight_first_run_detail", 3);
+        if (this.run.linesFired >= 5) analytics.funnelStep("leadlight_first_run_detail", 4);
         audioManager.setComboLevel(this.run.combo);
         store.patch({
             runStatus: this.run.status,
@@ -201,6 +209,16 @@ export class RunController {
         this.finished = true;
 
         const state = store.get();
+        // A beaten personal best is the progression beat that predicts a next
+        // session; recording it separately from run_ended makes "did this run
+        // matter to the player" answerable without reconstructing it from scores.
+        if (summary.score > state.bestScore) {
+            analytics.event("milestone_reached", {
+                milestone: "best_score",
+                value: summary.score,
+                previous: state.bestScore,
+            });
+        }
         store.patch({
             runStatus: "over",
             runSummary: summary,
@@ -231,7 +249,12 @@ export class RunController {
             second_firing_used: summary.secondFiringUsed,
             duration_ms: Math.round(performance.now() - this.startedAt),
         });
-        runtimeServices.funnel(3, "run_finished", "leadlight_first_run", 1);
+        analytics.funnelStep("leadlight_first_run", 3);
+        analytics.funnelStep("leadlight_first_run_detail", 5, {
+            lines: summary.linesFired,
+            pieces: summary.piecesPlaced,
+        });
+        analytics.funnelStep("engagement", store.get().runsPlayed, { score: summary.score });
         void saveSystem.flush();
         return summary;
     }

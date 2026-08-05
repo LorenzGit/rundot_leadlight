@@ -15,9 +15,8 @@ export default function MenuScreenLayout({
     backScreen?: MenuScreen;
 }) {
     const back = async () => {
-        await audioManager.unlock();
-        audioManager.play("tap");
         store.patch({ menuScreen: backScreen });
+        void audioManager.unlock().then(() => audioManager.play("tap"));
     };
     // No pb-safe-bottom on the shell: the scroll region below is an opaque
     // surface and it carries the bottom inset as its own padding. Padding the
