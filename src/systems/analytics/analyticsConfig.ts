@@ -26,7 +26,9 @@ export const analytics = createAnalytics({
         void recordAnalytics(name, { ...payload, build_version: packageJson.version });
     },
     emitFunnelStep: (step, name, funnel, order) => {
-        void recordFunnelStep(step, name, funnel, order);
+        // Return the delivery promise so once-ever marks persist only after
+        // the SDK confirms the step (see AnalyticsConfig.emitFunnelStep).
+        return recordFunnelStep(step, name, funnel, order);
     },
     funnels: {
         /**

@@ -32,6 +32,7 @@ export interface RunCapabilities {
     analytics: boolean;
     liveops: boolean;
     notifications: boolean;
+    leaderboard: boolean;
     haptics: boolean;
     ads: boolean;
     purchases: boolean;
@@ -48,6 +49,7 @@ const OFFLINE_CAPABILITIES: RunCapabilities = {
     analytics: false,
     liveops: false,
     notifications: false,
+    leaderboard: false,
     haptics: false,
     ads: false,
     purchases: false,
@@ -62,6 +64,23 @@ function sdkNamespace(name: string): boolean {
     return typeof (RundotGameAPI as unknown as Record<string, unknown>)[name] === "object";
 }
 
+/**
+ * PITFALL: there is NO runtime RundotGameAPI.haptics namespace (the HapticsApi
+ * interface in the .d.ts is types-only). Support comes from DeviceInfo, and the
+ * trigger lives on the API root. Read LIVE at every call site that acts on it:
+ * `enabled` reflects the player's system setting, which can change mid-session,
+ * and a cached false at boot must never gate a later action.
+ */
+function hapticsAvailableNow(): boolean {
+    if (!_ready) return false;
+    try {
+        const device = RundotGameAPI.system.getDevice();
+        return device?.haptics?.supported === true && device?.haptics?.enabled === true;
+    } catch {
+        return false;
+    }
+}
+
 function snapshotCapabilities(): RunCapabilities {
     if (!_ready) return OFFLINE_CAPABILITIES;
     const environment = RundotGameAPI._environmentData?.capabilities;
@@ -72,17 +91,8 @@ function snapshotCapabilities(): RunCapabilities {
         analytics: sdkNamespace("analytics"),
         liveops: sdkNamespace("liveops"),
         notifications: sdkNamespace("notifications"),
-        // PITFALL: there is NO runtime RundotGameAPI.haptics namespace (the
-        // HapticsApi interface in the .d.ts is types-only). Support comes
-        // from DeviceInfo, and the trigger lives on the API root.
-        haptics: (() => {
-            try {
-                const device = RundotGameAPI.system.getDevice();
-                return device?.haptics?.supported === true && device?.haptics?.enabled === true;
-            } catch {
-                return false;
-            }
-        })(),
+        leaderboard: sdkNamespace("leaderboard"),
+        haptics: hapticsAvailableNow(),
         ads: environment?.ads === true,
         purchases: environment?.purchases === true,
         shop: environment?.purchases === true && sdkNamespace("shop"),
@@ -92,6 +102,16 @@ function snapshotCapabilities(): RunCapabilities {
 }
 
 export function getRunCapabilities(): Readonly<RunCapabilities> {
+    return capabilities;
+}
+
+/**
+ * Re-read host capabilities. Wired to onAwake (the SDK's "refresh stale data"
+ * hook) so a session that started before a grant or attach does not stay
+ * frozen on its boot snapshot.
+ */
+export function refreshRunCapabilities(): Readonly<RunCapabilities> {
+    capabilities = snapshotCapabilities();
     return capabilities;
 }
 
@@ -292,6 +312,34 @@ export function getEffectiveSafeArea(): Readonly<RunSafeArea> {
     return host;
 }
 
+/**
+ * Submit a run score to the default leaderboard.
+ *
+ * Boards were already configured for this game but had zero scored players,
+ * because nothing ever submitted. Fire-and-forget: a rejected or unavailable
+ * board must never interrupt the results flow.
+ */
+export async function submitLeaderboardScore(score: number, durationSeconds: number): Promise<string | null> {
+    if (!capabilities.leaderboard || score <= 0) return null;
+    try {
+        const result = await withTimeout(
+            RundotGameAPI.leaderboard.submitScore({
+                score: Math.max(0, Math.round(score)),
+                duration: Math.max(1, Math.round(durationSeconds)),
+                mode: "classic",
+                period: "alltime",
+            }),
+            8000,
+            "leaderboard.submitScore",
+        );
+        if (!result?.accepted) return null;
+        return result.rank ? `Leaderboard rank #${result.rank}!` : "Score submitted.";
+    } catch (error) {
+        console.warn("[runSdk] leaderboard submit unavailable", error);
+        return null;
+    }
+}
+
 export async function withTimeout<T>(operation: Promise<T>, timeoutMs = 2_000, label = "RUN operation"): Promise<T> {
     let timeoutId = 0;
     const timeout = new Promise<never>((_, reject) => {
@@ -331,8 +379,32 @@ export async function initSdk(): Promise<boolean> {
     capabilities = snapshotCapabilities();
     if (!_ready) {
         console.info("[runSdk] RUN host unavailable; using local non-authoritative fallbacks");
+        // Inside an iframe the host is expected — a cold WebView can simply be
+        // slower than the bounded handshake. Keep watching so a late attach
+        // upgrades this session instead of stranding it offline until relaunch.
+        if (embedded) watchForLateHostAttach();
     }
     return _ready;
+}
+
+function watchForLateHostAttach(): void {
+    const deadline = performance.now() + 30_000;
+    const watcher = window.setInterval(() => {
+        try {
+            if (RundotGameAPI.isAvailable() || RundotGameAPI.isMock()) {
+                window.clearInterval(watcher);
+                _ready = true;
+                capabilities = snapshotCapabilities();
+                applyRunSafeArea();
+                console.info("[runSdk] RUN host attached after the boot handshake; capabilities refreshed");
+                return;
+            }
+        } catch {
+            window.clearInterval(watcher);
+            return;
+        }
+        if (performance.now() >= deadline) window.clearInterval(watcher);
+    }, 500);
 }
 
 export async function readAppStorage(key: string): Promise<{ ok: boolean; value: string | null }> {
@@ -368,6 +440,32 @@ export async function requestServerEpochMs(): Promise<number | null> {
     }
 }
 
+/**
+ * Read the RUN app's notification permission WITHOUT prompting.
+ *
+ * The permission is app-wide, not per-game: `H5_IS_LOCAL_NOTIFICATIONS_ENABLED`
+ * and its setter carry no game id, so a player who allowed notifications for
+ * RUN in any game has already allowed them here. Read it at boot rather than
+ * waiting for a Settings visit that never comes — that wait is what left the
+ * whole reminder cadence dormant for players who had already said yes.
+ *
+ * Only `setLocalNotificationsEnabled` can surface a host prompt. This is the
+ * silent half, so it is safe to call on every runtime refresh.
+ */
+export async function readNotificationPermission(): Promise<boolean> {
+    if (!capabilities.notifications) return false;
+    try {
+        return await withTimeout(
+            RundotGameAPI.notifications.isLocalNotificationsEnabled(),
+            2_000,
+            "notifications.isLocalNotificationsEnabled",
+        );
+    } catch (error) {
+        console.warn("[runSdk] notification permission read failed", error);
+        return false;
+    }
+}
+
 export type NotificationPreferenceResult = "enabled" | "disabled" | "unavailable" | "failed";
 
 export async function setNotificationPreference(enabled: boolean): Promise<NotificationPreferenceResult> {
@@ -394,7 +492,7 @@ export async function setNotificationPreference(enabled: boolean): Promise<Notif
 export type HapticStyle = "light" | "medium" | "heavy" | "success" | "warning" | "error";
 
 export async function triggerHaptic(style: HapticStyle): Promise<boolean> {
-    if (capabilities.haptics) {
+    if (hapticsAvailableNow()) {
         try {
             const map: Record<HapticStyle, HapticFeedbackStyle> = {
                 light: HapticFeedbackStyle.Light,
@@ -545,10 +643,22 @@ async function withHostOverlay<T>(run: () => Promise<T>): Promise<T> {
     }
 }
 
+/**
+ * Budget for an ad-readiness probe.
+ *
+ * On web the host answers this from the ad SDK, which on a cold first call
+ * waits out its consent manager (~5s) and then loads the ad script (~5s). The
+ * old 2s budget expired during that first probe and reported "no ad available"
+ * on a host that was merely still warming up — while every later probe, served
+ * from the host's cache, returned instantly. That is what made rewarded ads
+ * work only sometimes.
+ */
+const AD_READY_TIMEOUT_MS = 12_000;
+
 export async function showVerifiedRewardedAd(id: string, name: string): Promise<VerifiedActionResult> {
     if (!capabilities.ads) return "unavailable";
     try {
-        const ready = await withTimeout(RundotGameAPI.ads.isRewardedAdReadyAsync(), 2_000, "ads.ready");
+        const ready = await withTimeout(RundotGameAPI.ads.isRewardedAdReadyAsync(), AD_READY_TIMEOUT_MS, "ads.ready");
         if (!ready) return "unavailable";
         // Do not timeout a user-mediated overlay: the interruption must last
         // until the host tells us it has actually closed.
@@ -566,7 +676,7 @@ export async function showVerifiedInterstitialAd(id: string, name: string): Prom
     try {
         const ready = await withTimeout(
             RundotGameAPI.ads.isInterstitialAdReadyAsync(),
-            2_000,
+            AD_READY_TIMEOUT_MS,
             "ads.interstitial.ready",
         );
         if (!ready) return "unavailable";

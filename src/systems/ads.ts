@@ -103,7 +103,9 @@ export async function showRewarded(id: PlacementId): Promise<VerifiedActionResul
     const result = await showVerifiedRewardedAd(PLACEMENT_DISPLAY_ID[id], placement.displayName);
     monetizationTelemetry.record("ad_result", { placement_id: id, format: "rewarded", result });
     if (result === "verified") {
-        analytics.event("rewarded_ad_complete", { ad_display_id: PLACEMENT_DISPLAY_ID[id], placement: id });
+        analytics.event("rewarded_ad_watched", { ad_display_id: PLACEMENT_DISPLAY_ID[id], placement: id });
+    } else {
+        analytics.event("rewarded_ad_dismissed", { ad_display_id: PLACEMENT_DISPLAY_ID[id], placement: id, result });
     }
 
     // A cancelled video still consumed an impression opportunity, so it counts

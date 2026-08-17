@@ -1,6 +1,6 @@
 {
   "name": "leadlight",
-  "version": "1.0.4",
+  "version": "1.0.9",
   "description": "LEADLIGHT — a portrait stained-glass block puzzle for RUN.world, built with PixiJS 8 (WebGPU-first).",
   "private": true,
   "license": "SEE LICENSE IN LICENSE.md",
@@ -16,6 +16,7 @@
     "protobufjs": false
   },
   "scripts": {
+    "version:check": "node scripts/check-deployed-version.mjs",
     "dev": "vite",
     "dev:playground": "cross-env RUNDOT_PLAYGROUND=1 vite",
     "format": "biome format --write .",

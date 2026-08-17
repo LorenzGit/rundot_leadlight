@@ -32,7 +32,10 @@ export default function DailyRewardsScreen() {
             <p className="authority-label">{view.label}</p>
             <div className="reward-track">
                 {REWARDS.map((reward, index) => (
-                    <div className={`reward-day ${view.streak === index + 1 ? "current" : ""}`} key={reward}>
+                    <div
+                        className={`reward-day ${view.streak > 0 && (view.streak - 1) % REWARDS.length === index ? "current" : ""}`}
+                        key={reward}
+                    >
                         <span>
                             {t("LabelDay")} {index + 1}
                         </span>

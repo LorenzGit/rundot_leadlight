@@ -62,7 +62,14 @@ export interface AppState {
     musicVolume: number;
     sfxEnabled: boolean;
     sfxVolume: number;
+    /** Derived each boot from the host permission and the opt-out below. */
     notificationsEnabled: boolean;
+    /**
+     * The player's own "not in this game" choice, set only from Settings.
+     * Separate from the host permission because that permission is shared by
+     * every RUN game: turning reminders off here must not silence the others.
+     */
+    notificationsOptOut: boolean;
     notificationsConsent: "unknown" | "granted" | "denied";
     hapticsEnabled: boolean;
     reducedMotion: boolean;
@@ -120,6 +127,7 @@ let state: AppState = {
     sfxEnabled: true,
     sfxVolume: 0.72,
     notificationsEnabled: false,
+    notificationsOptOut: false,
     notificationsConsent: "unknown",
     hapticsEnabled: true,
     reducedMotion: window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false,

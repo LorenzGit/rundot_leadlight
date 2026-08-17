@@ -99,5 +99,3 @@ NotificationFailed,REMINDER REQUEST FAILED,FALHA AO PEDIR LEMBRETE,FALLÓ LA SOL
 NotificationConsentNote,Reminder consent changes only after the RUN host confirms the requested state.,O consentimento muda apenas após a RUN confirmar o estado solicitado.,El consentimiento cambia solo tras la confirmación de RUN.
 HapticSent,HAPTIC SENT,VIBRAÇÃO ENVIADA,VIBRACIÓN ENVIADA
 HapticUnsupported,HAPTICS NEED A SUPPORTED DEVICE,A VIBRAÇÃO EXIGE UM APARELHO COMPATÍVEL,LA VIBRACIÓN REQUIERE UN DISPOSITIVO COMPATIBLE
-NotificationTitle,LEADLIGHT,LEADLIGHT,LEADLIGHT
-NotificationReEngagementBody,The kiln is cold and there is glass on the bench.,O forno esfriou e há vidro na bancada.,El horno está frío y hay vidrio en el banco.

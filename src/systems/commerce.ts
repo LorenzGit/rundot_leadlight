@@ -21,6 +21,7 @@ import {
     type PendingPurchaseIntent,
     type PurchaseOutcome,
 } from "./monetization/purchaseCoordinator.ts";
+import { checkoutErrorCode, verdictForCode, verdictForMessage } from "./monetization/checkoutClassification.ts";
 import { getMonetizationControls, monetizationTelemetry } from "./monetization/runtime.ts";
 import { saveSystem } from "./save.ts";
 
@@ -85,11 +86,26 @@ async function syncEntitlements(): Promise<void> {
     for (const listener of ownershipListeners) listener();
 }
 
+/** The host accepted the order but has not settled it — outcome still open. */
+class UnsettledOrderError extends Error {
+    constructor(status: string | undefined) {
+        super(`RUN shop returned order status "${status ?? "none"}"`);
+    }
+}
+
 const purchaseCoordinator = createPurchaseCoordinator<ShopPurchaseResponse, ShopOrderHistoryResponse>({
     shop: {
         async purchase(itemId, idempotencyKey) {
             const response = await purchaseShopItem(itemId, idempotencyKey);
-            if (!response.success) throw new Error("RUN SHOP DID NOT CONFIRM THE ORDER");
+            // `success` only reports that the host accepted the request.
+            // Replaying an idempotency key returns the ORIGINAL order verbatim,
+            // so an order still in `pending_payment` also arrives as
+            // `success: true` — paying out on that would grant an unpaid
+            // purchase, and the player may still have been charged, so it has
+            // to stay unresolved rather than be written off.
+            if (!response.success || response.order?.status !== "fulfilled") {
+                throw new UnsettledOrderError(response.order?.status);
+            }
             return response;
         },
         getOrderHistory: fetchShopOrderHistory,
@@ -138,14 +154,17 @@ const purchaseCoordinator = createPurchaseCoordinator<ShopPurchaseResponse, Shop
     },
     syncEntitlements,
     classifyError(error) {
-        const message = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
-        if (message.includes("cancel")) return "cancelled";
-        if (message.includes("declin") || message.includes("insufficient") || message.includes("did not confirm")) {
-            return "failed";
+        // An order the host never settled may already have taken the money.
+        if (error instanceof UnsettledOrderError) return "unknown";
+        // The host names most declines outright; that code is the only reliable
+        // way to tell a clean, uncharged refusal from an ambiguous failure.
+        const code = checkoutErrorCode(error);
+        if (code) {
+            const verdict = verdictForCode(code);
+            if (verdict !== "unknown") return verdict;
         }
-        // Timeouts and unrecognised host outcomes stay unknown so the intent
-        // survives and can be reconciled against order history.
-        return "unknown";
+        // Otherwise fall back to the host's human-readable message.
+        return verdictForMessage(error instanceof Error ? error.message : String(error));
     },
 });
 
@@ -260,12 +279,16 @@ export async function purchaseProduct(
     if (!view.purchasable || !definition) return null;
 
     analytics.funnelStep("purchase", 2);
-    monetizationTelemetry.record("purchase_tapped", { product_id: productId, placement });
+    monetizationTelemetry.record("offer_clicked", { product_id: productId, placement });
     analytics.funnelStep("purchase", 3);
-    monetizationTelemetry.record("checkout_started", { product_id: productId, placement });
+    monetizationTelemetry.record("iap_purchase_started", { product_id: productId, placement });
     const outcome = await purchaseCoordinator.purchase(productId, definition.catalogItemId);
     analytics.funnelStep("purchase", 4);
-    monetizationTelemetry.record("checkout_result", { product_id: productId, placement, result: outcome.status });
+    monetizationTelemetry.record(outcome.status === "confirmed" ? "iap_purchase_complete" : "iap_purchase_failed", {
+        product_id: productId,
+        placement,
+        result: outcome.status,
+    });
     return outcome;
 }
 
@@ -275,7 +298,7 @@ export async function reconcilePendingPurchase(): Promise<void> {
     if (!pending) return;
     const outcome = await purchaseCoordinator.reconcilePending();
     if (!outcome) return;
-    monetizationTelemetry.record("checkout_result", {
+    monetizationTelemetry.record(outcome.status === "confirmed" ? "iap_purchase_complete" : "iap_purchase_failed", {
         product_id: pending.productId,
         placement: "resume_reconciliation",
         result: outcome.status,

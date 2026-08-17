@@ -4,6 +4,7 @@ import { setNotificationPreference } from "../sdk/runSdk.ts";
 import { type AppState, store, useStore } from "../state/store.ts";
 import { LOCALES, selectLocale, t } from "../systems/localization.ts";
 import { runtimeServices } from "../systems/runtimeServices.ts";
+import { returnReminders } from "../systems/retention/retentionConfig.ts";
 import { saveSystem } from "../systems/save.ts";
 import MenuScreenLayout from "./MenuScreenLayout.tsx";
 import SettingToggle from "./SettingToggle.tsx";
@@ -21,10 +22,27 @@ export default function SettingsScreen() {
     const notificationToggle = async (enabled: boolean) => {
         await audioManager.unlock();
         setNotificationBusy(true);
-        const result = await setNotificationPreference(enabled);
+        if (!enabled) {
+            // Opt out of THIS game only, and drop what is already scheduled.
+            // Turning the host preference off here would revoke the RUN app's
+            // permission, which every other game shares — one player switching
+            // our reminders off would silence all of them.
+            persist({ notificationsOptOut: true, notificationsEnabled: false });
+            await returnReminders.cancelAll();
+            setNotificationBusy(false);
+            return;
+        }
+        // Already granted app-wide: nothing to ask, just stop opting out.
+        if (state.notificationsConsent === "granted") {
+            persist({ notificationsOptOut: false, notificationsEnabled: true });
+            runtimeServices.rearmNotifications();
+            setNotificationBusy(false);
+            return;
+        }
+        const result = await setNotificationPreference(true);
         setNotificationBusy(false);
         if (result === "enabled") {
-            persist({ notificationsEnabled: true, notificationsConsent: "granted" });
+            persist({ notificationsOptOut: false, notificationsEnabled: true, notificationsConsent: "granted" });
             runtimeServices.rearmNotifications();
         } else if (result === "disabled") persist({ notificationsEnabled: false, notificationsConsent: "denied" });
         else {

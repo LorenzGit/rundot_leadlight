@@ -365,7 +365,7 @@ function StuckCard() {
                         onClick={() => {
                             void (async () => {
                                 setBusy(true);
-                                monetizationTelemetry.record("ad_offer_viewed", {
+                                monetizationTelemetry.record("offer_shown", {
                                     placement_id: PLACEMENT.secondFiring,
                                     surface: "stuck_card",
                                 });
@@ -448,7 +448,7 @@ function ResultsCard() {
                         onClick={() => {
                             void (async () => {
                                 setBusy(true);
-                                monetizationTelemetry.record("ad_offer_viewed", {
+                                monetizationTelemetry.record("offer_shown", {
                                     placement_id: PLACEMENT.doubleCullet,
                                     surface: "results_card",
                                 });

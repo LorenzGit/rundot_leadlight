@@ -34,7 +34,7 @@ export default function AtelierScreen() {
     // player never navigates to should not cost them a request.
     useEffect(() => {
         void refreshCommerce();
-        monetizationTelemetry.record("monetization_surface_viewed", { surface: "atelier", runs_played: runsPlayed });
+        monetizationTelemetry.record("store_opened", { surface: "atelier", runs_played: runsPlayed });
     }, [runsPlayed]);
 
     // Swatches are drawn from the same generator the board uses, so a palette

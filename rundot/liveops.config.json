@@ -3,8 +3,7 @@
     "values": {
       "leadlight_runtime": {
         "dailyRewardsEnabled": true,
-        "dailyQuestsEnabled": true,
-        "notificationDelaySeconds": 86400
+        "dailyQuestsEnabled": true
       },
       "leadlight_monetization": {
         "enabled": true,

@@ -62,13 +62,25 @@ async function commitGrant(id: string, shards: number, patch: Parameters<typeof 
     store.patch({ ...patch, shards: before.shards + shards });
     const saved = await saveSystem.flush();
     if (!saved) {
-        store.patch({
-            shards: before.shards,
-            dailyRewardLastClaimDay: before.dailyRewardLastClaimDay,
-            dailyRewardStreak: before.dailyRewardStreak,
-            dailyRewardClaimIds: before.dailyRewardClaimIds,
-            dailyQuestClaimIds: before.dailyQuestClaimIds,
-        });
+        // Revert by DELTA against the current state, not by restoring the
+        // `before` snapshot wholesale: a reward claim and a quest claim can
+        // overlap on one failed flush, and absolute restores would each wipe
+        // the other's revert (and any shard change made during the await).
+        // Scalar reward fields are safe to restore from `before` — only a
+        // reward claim writes them, and its claim id dedupes concurrency.
+        const current = store.get();
+        const revert: Parameters<typeof store.patch>[0] = {
+            shards: Math.max(0, current.shards - shards),
+        };
+        if ("dailyRewardClaimIds" in patch) {
+            revert.dailyRewardClaimIds = current.dailyRewardClaimIds.filter((claimId) => claimId !== id);
+            revert.dailyRewardLastClaimDay = before.dailyRewardLastClaimDay;
+            revert.dailyRewardStreak = before.dailyRewardStreak;
+        }
+        if ("dailyQuestClaimIds" in patch) {
+            revert.dailyQuestClaimIds = current.dailyQuestClaimIds.filter((claimId) => claimId !== id);
+        }
+        store.patch(revert);
     }
     inFlight.delete(id);
     return saved;
@@ -138,6 +150,11 @@ export const dailySystems = {
     quests(): QuestView[] {
         const time = gate();
         const state = store.get();
+        // Only recordQuestProgress rolls dailyQuestDay forward, so right after
+        // midnight the stored progress still belongs to YESTERDAY while the
+        // claim ids are already built for today. Counting that stale progress
+        // let every completed-but-unreset quest pay out a second time each day.
+        const progressIsToday = state.dailyQuestDay === time.day;
         const definitions = [
             { id: "runs", label: "FINISH 3 RUNS", target: 3, reward: 30 },
             { id: "lines", label: "FIRE 20 LINES", target: 20, reward: 35 },
@@ -145,7 +162,7 @@ export const dailySystems = {
         ];
         return definitions.map((quest) => {
             const claimId = `daily-quest:${time.day ?? "untrusted"}:${quest.id}`;
-            const value = state.dailyQuestProgress[quest.id] ?? 0;
+            const value = progressIsToday ? (state.dailyQuestProgress[quest.id] ?? 0) : 0;
             const claimed = state.dailyQuestClaimIds.includes(claimId);
             return { ...quest, value, claimed, claimable: time.ready && !claimed && value >= quest.target };
         });

@@ -87,9 +87,11 @@ Only the following bounded client-visible values are consumed:
 
 - `runtime.dailyRewardsEnabled` boolean
 - `runtime.dailyQuestsEnabled` boolean
-- `runtime.notificationDelaySeconds` number clamped to 1 hour through 7 days
 - `runtime.monetization.adsEnabled` boolean, additionally blocked by host capability; ad placement IDs are self-authored and must be renamed per derived game
 - `runtime.monetization.shopEnabled` boolean, additionally blocked by Run Bits
   Shop item/entitlement placeholders and capability
+
+The return-reminder cadence is deliberately not remoteable: it is fixed at
+24/48/72h in `returnReminders.ts`.
 
 Never place secrets, entitlement ownership, trusted rewards, or anti-cheat decisions in client LiveOps.

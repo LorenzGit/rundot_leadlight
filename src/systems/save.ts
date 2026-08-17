@@ -27,6 +27,7 @@ export interface GameSaveV1 {
         | "sfxEnabled"
         | "sfxVolume"
         | "notificationsEnabled"
+        | "notificationsOptOut"
         | "notificationsConsent"
         | "hapticsEnabled"
         | "reducedMotion"
@@ -121,6 +122,7 @@ function snapshot(): GameSaveV1 {
             sfxEnabled: s.sfxEnabled,
             sfxVolume: s.sfxVolume,
             notificationsEnabled: s.notificationsEnabled,
+            notificationsOptOut: s.notificationsOptOut,
             notificationsConsent: s.notificationsConsent,
             hapticsEnabled: s.hapticsEnabled,
             reducedMotion: s.reducedMotion,
@@ -196,9 +198,14 @@ function migrate(raw: unknown): GameSaveV1 | null {
             ),
             // Consent is the gate: an "enabled" flag without granted consent is
             // exactly the state a stale save would restore, so it is dropped.
-            notificationsEnabled:
-                candidate.settings.notificationsConsent === "granted" &&
-                candidate.settings.notificationsEnabled === true,
+            // Additive back-fill: saves written before the opt-out existed have
+            // no field, and "absent" must mean "has not opted out" — defaulting
+            // the other way would re-silence every existing player.
+            notificationsOptOut: booleanOr(candidate.settings.notificationsOptOut, false),
+            // Restored only so Settings paints something sane before the boot
+            // probe lands; runtimeServices re-derives it from the live host
+            // permission on the first refresh.
+            notificationsEnabled: booleanOr(candidate.settings.notificationsEnabled, false),
         },
         progress: {
             bestScore: nonNegativeInteger(candidate.progress.bestScore),

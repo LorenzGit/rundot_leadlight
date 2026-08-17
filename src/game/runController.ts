@@ -1,3 +1,4 @@
+import { submitLeaderboardScore } from "../sdk/runSdk.ts";
 /**
  * The bridge between the rules, the scene, and everything outside the canvas.
  *
@@ -176,9 +177,17 @@ export class RunController {
      */
     async watchSecondFiring(): Promise<"granted" | "declined" | "unavailable"> {
         if (!this.run.secondFiringAvailable) return "unavailable";
-        monetizationTelemetry.record("ad_offer_viewed", { placement_id: PLACEMENT.secondFiring });
+        monetizationTelemetry.record("offer_shown", { placement_id: PLACEMENT.secondFiring });
         const result = await showRewarded(PLACEMENT.secondFiring);
         if (result !== "verified") {
+            // A cancel is the player actively turning the offer down — the one
+            // signal that separates a weak offer from missing ad inventory.
+            if (result === "cancelled") {
+                monetizationTelemetry.record("offer_dismissed", {
+                    placement_id: PLACEMENT.secondFiring,
+                    reason: "player_cancelled",
+                });
+            }
             this.publish();
             return result === "cancelled" ? "declined" : "unavailable";
         }
@@ -186,7 +195,7 @@ export class RunController {
         const before = this.run.boardSnapshot();
         const cleared = this.run.secondFiring();
         if (!cleared) return "unavailable";
-        monetizationTelemetry.record("reward_granted", {
+        monetizationTelemetry.record("reward_claimed", {
             placement_id: PLACEMENT.secondFiring,
             reward_id: "second_firing",
             cells_cleared: cleared.length,
@@ -239,6 +248,16 @@ export class RunController {
         recordCompletedRun();
         audioManager.play(summary.score > state.bestScore && summary.score > 0 ? "reward" : "gameover");
         void runtimeServices.haptic(summary.score > state.bestScore ? "success" : "warning");
+        // Boards were configured but nothing ever submitted, so they read as
+        // "zero scored players". Fire-and-forget: never blocks results.
+        void submitLeaderboardScore(summary.score, (performance.now() - this.startedAt) / 1000);
+        // Canonical loop name alongside the game's own; only run_completed
+        // reaches RUN's core-loop query.
+        runtimeServices.track("run_completed", {
+            score: summary.score,
+            lines: summary.linesFired,
+            duration_ms: Math.round(performance.now() - this.startedAt),
+        });
         runtimeServices.track("run_ended", {
             score: summary.score,
             lines: summary.linesFired,
@@ -266,11 +285,11 @@ export class RunController {
         const state = store.get();
         const summary = state.runSummary;
         if (!summary || state.culletDoubled || summary.shards <= 0) return "unavailable";
-        monetizationTelemetry.record("ad_offer_viewed", { placement_id: PLACEMENT.doubleCullet });
+        monetizationTelemetry.record("offer_shown", { placement_id: PLACEMENT.doubleCullet });
         const result = await showRewarded(PLACEMENT.doubleCullet);
         if (result !== "verified") return result === "cancelled" ? "declined" : "unavailable";
 
-        monetizationTelemetry.record("reward_granted", {
+        monetizationTelemetry.record("reward_claimed", {
             placement_id: PLACEMENT.doubleCullet,
             reward_id: "shards_double",
             amount: summary.shards,

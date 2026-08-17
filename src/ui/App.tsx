@@ -19,6 +19,7 @@ import LoadingScreen from "./LoadingScreen.tsx";
 import MainMenu from "./MainMenu.tsx";
 import SettingsScreen from "./SettingsScreen.tsx";
 import StatsScreen from "./StatsScreen.tsx";
+import { analytics } from "../systems/analytics/analyticsConfig.ts";
 
 const DevelopmentTools = import.meta.env.DEV ? lazy(() => import("../dev/DevelopmentTools.tsx")) : null;
 
@@ -86,6 +87,12 @@ function MenuRoute() {
 export default function App() {
     useOrientationSafeArea();
     const phase = useStore((s) => s.phase);
+
+    // RUN's core-loop query expects screen_viewed; this router is the only
+    // place every screen change passes through.
+    useEffect(() => {
+        analytics.event("screen_viewed", { screen: phase });
+    }, [phase]);
     return (
         <div id="app-frame">
             {phase === "loading" && <LoadingScreen />}

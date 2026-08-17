@@ -4,7 +4,13 @@ import { createRoot } from "react-dom/client";
 import { warmAssets } from "./assets/preload.ts";
 import { audioManager } from "./audio/audioManager.ts";
 import { installBrowserQaContract } from "./qa/browserContract.ts";
-import { applyRunSafeArea, initSdk, registerLifecycles, requestHostExit } from "./sdk/runSdk.ts";
+import {
+    applyRunSafeArea,
+    initSdk,
+    refreshRunCapabilities,
+    registerLifecycles,
+    requestHostExit,
+} from "./sdk/runSdk.ts";
 import { store } from "./state/store.ts";
 import { restoreLocale } from "./systems/localization.ts";
 import { runtimeServices } from "./systems/runtimeServices.ts";
@@ -22,6 +28,10 @@ import {
 // closes the tab mid-load will ever produce. Emissions here are buffered until
 // markTransportReady() below, once the SDK transport exists.
 analytics.installErrorCapture();
+// The browser's own end-of-session signals. onQuit alone produced two
+// session_end events across the whole fleet in thirty days, because it
+// needs a clean host quit and players just close the tab.
+analytics.installSessionEndCapture();
 // Retention: arm the 24/48/72h return cadence and attribute a
 // notification-driven launch. Both are fire-and-forget — a host without
 // notification support must not delay the first playable frame.
@@ -115,6 +125,9 @@ async function boot() {
         onAwake: () => {
             store.patch({ paused: false });
             audioManager.setPaused(false);
+            // onAwake is the SDK's "refresh stale data" hook; a long suspend
+            // can span a settings change or a delayed host attach.
+            refreshRunCapabilities();
             runtimeServices.resume();
         },
         onQuit: () => {
