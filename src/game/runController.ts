@@ -1,4 +1,4 @@
-import { submitLeaderboardScore } from "../sdk/runSdk.ts";
+import { submitLeaderboardScore, showContextualLikePrompt } from "../sdk/runSdk.ts";
 /**
  * The bridge between the rules, the scene, and everything outside the canvas.
  *
@@ -253,6 +253,8 @@ export class RunController {
         void submitLeaderboardScore(summary.score, (performance.now() - this.startedAt) / 1000);
         // Canonical loop name alongside the game's own; only run_completed
         // reaches RUN's core-loop query.
+        // Ask for the like on a win. The wrapper owns the policy (3 wins, once ever).
+        void showContextualLikePrompt();
         runtimeServices.track("run_completed", {
             score: summary.score,
             lines: summary.linesFired,
