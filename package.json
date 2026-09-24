@@ -23,7 +23,7 @@
     "format:check": "biome format .",
     "lint": "biome lint src scripts vite.config.js --diagnostic-level=error --max-diagnostics=none",
     "typecheck": "tsc --noEmit",
-    "test": "node scripts/test-noise-random.mjs && node scripts/check-safe-area.ts && node scripts/simulate.mjs && node scripts/check-game.mjs",
+    "test": "node scripts/test-noise-random.mjs && node scripts/check-safe-area.ts && node scripts/simulate.mjs && node scripts/check-game.mjs && node --experimental-strip-types --experimental-test-module-mocks --no-warnings scripts/test-save-guard.ts",
     "simulate": "node scripts/simulate.mjs",
     "balance": "node scripts/simulate.mjs --sweep",
     "thumbnail": "node scripts/make-thumbnail.mjs",
